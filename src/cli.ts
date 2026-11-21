@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadRules } from './rules.ts';
 import { scan } from './scanner.ts';
@@ -11,7 +12,13 @@ if (!target) {
   process.exit(2);
 }
 
-const findings = scan(resolve(target), loadRules());
+const path = resolve(target);
+if (!existsSync(path)) {
+  console.error(`pqc-scan: path not found: ${path}`);
+  process.exit(2);
+}
+
+const findings = scan(path, loadRules());
 if (json) console.log(JSON.stringify(findings, null, 2));
 else {
   for (const item of findings) console.log(`${item.status}\t${item.file}:${item.line}\t${item.algorithm ?? 'unknown'}\t${item.note ?? ''}`);

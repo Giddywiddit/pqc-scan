@@ -1,0 +1,4 @@
+[
+  { "file": "index.ts", "line": 3, "algorithm": "SHA-256", "status": "observed-resistant" },
+  { "file": "keys.js", "line": 3, "algorithm": "RSA", "status": "vulnerable" }
+]

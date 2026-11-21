@@ -10,6 +10,8 @@ rules:
       ec: { algorithm: EC, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
       ed25519: { algorithm: Ed25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
       x25519: { algorithm: X25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      ed448: { algorithm: Ed448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      x448: { algorithm: X448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
       dh: { algorithm: DH, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
       ml-kem-512: { algorithm: ML-KEM-512, status: observed-resistant }
       ml-kem-768: { algorithm: ML-KEM-768, status: observed-resistant }
@@ -18,12 +20,12 @@ rules:
       ml-dsa-65: { algorithm: ML-DSA-65, status: observed-resistant }
       ml-dsa-87: { algorithm: ML-DSA-87, status: observed-resistant }
   - id: node-rsa-encrypt
-    functions: [publicEncrypt, privateDecrypt]
+    functions: [publicEncrypt, privateDecrypt, publicDecrypt, privateEncrypt]
     category: encryption
     algorithm: RSA
     status: vulnerable
   - id: node-key-exchange
-    functions: [createECDH, createDiffieHellman, createDiffieHellmanGroup, getDiffieHellman]
+    functions: [createECDH, createDiffieHellman, createDiffieHellmanGroup, getDiffieHellman, diffieHellman]
     category: key-exchange
     algorithm: ECDH/DH
     status: vulnerable
@@ -42,7 +44,15 @@ rules:
     algorithmFrom: { arg: 0 }
     values:
       aes-256-gcm: { algorithm: AES-256-GCM, status: observed-resistant }
+      aes-256-cbc: { algorithm: AES-256-CBC, status: observed-resistant }
+      aes-256-ctr: { algorithm: AES-256-CTR, status: observed-resistant }
+      chacha20-poly1305: { algorithm: ChaCha20-Poly1305, status: observed-resistant }
       aes-128-gcm: { algorithm: AES-128-GCM, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-192-gcm: { algorithm: AES-192-GCM, status: observed-resistant }
+      aes-192-cbc: { algorithm: AES-192-CBC, status: observed-resistant }
+      aes-192-ctr: { algorithm: AES-192-CTR, status: observed-resistant }
+      aes-128-cbc: { algorithm: AES-128-CBC, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-128-ctr: { algorithm: AES-128-CTR, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
   - id: node-hash
     functions: [createHash]
     category: hash
@@ -51,3 +61,126 @@ rules:
       sha256: { algorithm: SHA-256, status: observed-resistant }
       sha384: { algorithm: SHA-384, status: observed-resistant }
       sha512: { algorithm: SHA-512, status: observed-resistant }
+      sha3-256: { algorithm: SHA3-256, status: observed-resistant }
+      sha1: { algorithm: SHA-1, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
+      md5: { algorithm: MD5, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
+      sha3-384: { algorithm: SHA3-384, status: observed-resistant }
+      sha3-512: { algorithm: SHA3-512, status: observed-resistant }
+  - id: node-hmac
+    functions: [createHmac]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values:
+      sha256: { algorithm: HMAC-SHA-256, status: observed-resistant }
+      sha384: { algorithm: HMAC-SHA-384, status: observed-resistant }
+      sha512: { algorithm: HMAC-SHA-512, status: observed-resistant }
+      sha1: { algorithm: HMAC-SHA-1, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
+      md5: { algorithm: HMAC-MD5, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
+  - id: node-oneshot-signature
+    functions: [sign, verify]
+    category: signature
+    algorithmFrom: { arg: 0 }
+    values:
+      sha256: { algorithm: RSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; key type needs review." }
+      sha384: { algorithm: RSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; key type needs review." }
+      sha512: { algorithm: RSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; key type needs review." }
+  - id: node-random
+    functions: [randomBytes, randomFillSync, randomFill, randomInt, randomUUID, getRandomValues, webcrypto.getRandomValues, webcrypto.randomUUID]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
+  - id: webcrypto-keygen
+    functions: [subtle.generateKey, webcrypto.subtle.generateKey]
+    category: keygen
+    algorithmFrom: { arg: 0, property: name }
+    qualifiers: [length, hash]
+    values: &webcrypto-algorithms
+      rsassa-pkcs1-v1_5: { algorithm: RSA, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      rsa-pss: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      rsa-oaep: { algorithm: RSA-OAEP, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      ecdsa: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      ecdh: { algorithm: ECDH, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      ed25519: { algorithm: Ed25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      x25519: { algorithm: X25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      ed448: { algorithm: Ed448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      x448: { algorithm: X448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      ml-kem-512: { algorithm: ML-KEM-512, status: observed-resistant }
+      ml-kem-768: { algorithm: ML-KEM-768, status: observed-resistant }
+      ml-kem-1024: { algorithm: ML-KEM-1024, status: observed-resistant }
+      ml-dsa-44: { algorithm: ML-DSA-44, status: observed-resistant }
+      ml-dsa-65: { algorithm: ML-DSA-65, status: observed-resistant }
+      ml-dsa-87: { algorithm: ML-DSA-87, status: observed-resistant }
+      aes-gcm: { algorithm: AES-GCM, status: unresolved, note: "Key length is not resolved; AES-128 has reduced quantum security margin." }
+      aes-cbc: { algorithm: AES-CBC, status: unresolved, note: "Key length is not resolved; AES-128 has reduced quantum security margin." }
+      aes-ctr: { algorithm: AES-CTR, status: unresolved, note: "Key length is not resolved; AES-128 has reduced quantum security margin." }
+      aes-kw: { algorithm: AES-KW, status: unresolved, note: "Key length is not resolved; AES-128 has reduced quantum security margin." }
+      aes-kw-256: { algorithm: AES-256-KW, status: observed-resistant }
+      aes-kw-192: { algorithm: AES-192-KW, status: observed-resistant }
+      aes-kw-128: { algorithm: AES-128-KW, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      hmac: { algorithm: HMAC, status: unresolved, note: "Hash function is not resolved; review." }
+      aes-gcm-256: { algorithm: AES-256-GCM, status: observed-resistant }
+      aes-gcm-192: { algorithm: AES-192-GCM, status: observed-resistant }
+      aes-gcm-128: { algorithm: AES-128-GCM, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-cbc-256: { algorithm: AES-256-CBC, status: observed-resistant }
+      aes-cbc-192: { algorithm: AES-192-CBC, status: observed-resistant }
+      aes-cbc-128: { algorithm: AES-128-CBC, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-ctr-256: { algorithm: AES-256-CTR, status: observed-resistant }
+      aes-ctr-192: { algorithm: AES-192-CTR, status: observed-resistant }
+      aes-ctr-128: { algorithm: AES-128-CTR, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      hmac-sha-256: { algorithm: HMAC-SHA-256, status: observed-resistant }
+      hmac-sha-384: { algorithm: HMAC-SHA-384, status: observed-resistant }
+      hmac-sha-512: { algorithm: HMAC-SHA-512, status: observed-resistant }
+      hmac-sha-1: { algorithm: HMAC-SHA-1, status: unresolved, note: "SHA-1 is weak classically; migrate." }
+  - id: webcrypto-sign
+    functions: [subtle.sign, subtle.verify, webcrypto.subtle.sign, webcrypto.subtle.verify]
+    category: signature
+    algorithmFrom: { arg: 0, property: name }
+    values: *webcrypto-algorithms
+  - id: webcrypto-encrypt
+    functions: [subtle.encrypt, subtle.decrypt, webcrypto.subtle.encrypt, webcrypto.subtle.decrypt]
+    category: encryption
+    algorithmFrom: { arg: 0, property: name }
+    values: *webcrypto-algorithms
+  - id: webcrypto-derive
+    functions: [subtle.deriveKey, subtle.deriveBits, webcrypto.subtle.deriveKey, webcrypto.subtle.deriveBits]
+    category: key-exchange
+    algorithmFrom: { arg: 0, property: name }
+    values:
+      ecdh: { algorithm: ECDH, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      x25519: { algorithm: X25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      x448: { algorithm: X448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      hkdf: { algorithm: HKDF, status: unresolved, note: "Hash function is not resolved; review." }
+      pbkdf2: { algorithm: PBKDF2, status: unresolved, note: "Hash function is not resolved; review." }
+  - id: webcrypto-import
+    functions: [subtle.importKey, webcrypto.subtle.importKey]
+    category: keygen
+    algorithmFrom: { arg: 2, property: name }
+    qualifiers: [length, hash]
+    values: *webcrypto-algorithms
+  - id: webcrypto-digest
+    functions: [subtle.digest, webcrypto.subtle.digest]
+    category: hash
+    algorithmFrom: { arg: 0, property: name }
+    values:
+      sha-256: { algorithm: SHA-256, status: observed-resistant }
+      sha-384: { algorithm: SHA-384, status: observed-resistant }
+      sha-512: { algorithm: SHA-512, status: observed-resistant }
+      sha-1: { algorithm: SHA-1, status: unresolved, note: "SHA-1 is weak classically; migrate." }
+  - id: webcrypto-key-export
+    functions: [subtle.exportKey, webcrypto.subtle.exportKey, subtle.getPublicKey, webcrypto.subtle.getPublicKey]
+    category: unknown
+    ignore: true
+  - id: node-key-material
+    functions: [generateKey, generateKeySync, createSecretKey, createPublicKey, createPrivateKey]
+    category: keygen
+    status: unresolved
+    note: "Key type depends on key material or options; review."
+  - id: node-utility
+    functions: [timingSafeEqual, getHashes, getCiphers, getCurves, secureHeapUsed]
+    category: unknown
+    ignore: true
+  - id: webcrypto-wrap
+    functions: [subtle.wrapKey, subtle.unwrapKey, webcrypto.subtle.wrapKey, webcrypto.subtle.unwrapKey]
+    category: encryption
+    algorithmFrom: { arg: 3, property: name }
+    values: *webcrypto-algorithms

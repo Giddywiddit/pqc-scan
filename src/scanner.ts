@@ -5,6 +5,7 @@ import type { Finding, ModuleRules, Rule, Status } from './types.ts';
 
 interface Binding { module: string; imported?: string; }
 
+const globals = new Set(['globalThis', 'window', 'self']);
 const extensions = new Set(['.js', '.cjs', '.mjs', '.jsx', '.ts', '.cts', '.mts', '.tsx']);
 
 function moduleMatches(left: string, right: string): boolean {
@@ -29,7 +30,7 @@ function sourceFiles(target: string): string[] {
 function literal(node: ts.Expression | undefined, declarations: Map<string, ts.VariableDeclaration | null>): string | null {
   if (!node) return null;
   while (ts.isAsExpression(node) || ts.isParenthesizedExpression(node) || ts.isTypeAssertionExpression(node)) node = node.expression;
-  if (ts.isStringLiteralLike(node)) return node.text;
+  if (ts.isStringLiteralLike(node) || ts.isNumericLiteral(node)) return node.text;
   if (ts.isIdentifier(node)) {
     const declaration = declarations.get(node.text);
     if (declaration && (declaration.parent.flags & ts.NodeFlags.Const) !== 0) return literal(declaration.initializer, declarations);
@@ -37,33 +38,111 @@ function literal(node: ts.Expression | undefined, declarations: Map<string, ts.V
   return null;
 }
 
-function propertyLiteral(node: ts.Expression | undefined, property: string, declarations: Map<string, ts.VariableDeclaration | null>): string | null {
-  if (!node) return null;
-  while (ts.isAsExpression(node) || ts.isParenthesizedExpression(node) || ts.isTypeAssertionExpression(node)) node = node.expression;
-  if (ts.isIdentifier(node)) {
+type Declarations = Map<string, ts.VariableDeclaration | null>;
+
+// Strips wrappers and follows const identifiers to the expression they hold.
+function resolve(node: ts.Expression | undefined, declarations: Declarations): ts.Expression | undefined {
+  while (node && (ts.isAsExpression(node) || ts.isParenthesizedExpression(node) || ts.isTypeAssertionExpression(node))) node = node.expression;
+  if (node && ts.isIdentifier(node)) {
     const declaration = declarations.get(node.text);
-    if (declaration && (declaration.parent.flags & ts.NodeFlags.Const) !== 0) return propertyLiteral(declaration.initializer, property, declarations);
+    if (declaration && (declaration.parent.flags & ts.NodeFlags.Const) !== 0) return resolve(declaration.initializer, declarations);
   }
-  if (!ts.isObjectLiteralExpression(node)) return null;
-  const value = node.properties.find((item) => ts.isPropertyAssignment(item) && item.name.getText() === property);
-  return value && ts.isPropertyAssignment(value) ? literal(value.initializer, declarations) : null;
+  return node;
+}
+
+// Walks a dotted property path (`header.alg`) through object literals.
+function propertyNode(node: ts.Expression | undefined, path: string[], declarations: Declarations): ts.Expression | undefined {
+  let current = resolve(node, declarations);
+  for (const key of path) {
+    if (!current || !ts.isObjectLiteralExpression(current)) return undefined;
+    const found = current.properties.find((item) => ts.isPropertyAssignment(item) && item.name.getText() === key);
+    current = found && ts.isPropertyAssignment(found) ? resolve(found.initializer, declarations) : undefined;
+  }
+  return current;
+}
+
+function propertyLiteral(node: ts.Expression | undefined, property: string, declarations: Declarations): string | null {
+  const value = propertyNode(node, property.split('.'), declarations);
+  if (!value) return null;
+  return literal(value, declarations) ?? (property === 'name' ? null : propertyLiteral(value, 'name', declarations));
+}
+
+// A property holding one string, or an array literal of strings (e.g. jsonwebtoken `algorithms`).
+function propertyLiterals(node: ts.Expression | undefined, property: string, declarations: Declarations): string[] | null {
+  const value = propertyNode(node, property.split('.'), declarations);
+  if (value && ts.isArrayLiteralExpression(value)) {
+    const items = value.elements.map((item) => literal(item, declarations));
+    return items.length > 0 && items.every((item): item is string => item !== null) ? items : null;
+  }
+  const single = propertyLiteral(node, property, declarations);
+  return single === null ? null : [single];
+}
+
+// Scopes that declare each name (variables, parameters, functions, classes), per source file.
+const scopesByFile = new WeakMap<ts.SourceFile, Map<string, ts.Node[]>>();
+
+function declaredNames(name: ts.BindingName): string[] {
+  if (ts.isIdentifier(name)) return [name.text];
+  return name.elements.flatMap((item) => (ts.isOmittedExpression(item) ? [] : declaredNames(item.name)));
+}
+
+function scopeOf(node: ts.Node, blockScoped: boolean): ts.Node {
+  for (let current = node.parent; current; current = current.parent) {
+    if (ts.isFunctionLike(current) || ts.isSourceFile(current) || ts.isClassStaticBlockDeclaration(current)) return current;
+    if (blockScoped && (ts.isBlock(current) || ts.isCatchClause(current) || ts.isForStatement(current) || ts.isForInStatement(current) || ts.isForOfStatement(current) || ts.isCaseBlock(current))) return current;
+  }
+  return node.getSourceFile();
+}
+
+function recordScopes(source: ts.SourceFile): void {
+  const scopes = new Map<string, ts.Node[]>();
+  const add = (name: string, scope: ts.Node): void => { scopes.set(name, [...(scopes.get(name) ?? []), scope]); };
+  const visit = (node: ts.Node): void => {
+    if (ts.isVariableDeclaration(node)) {
+      const blockScoped = ts.isCatchClause(node.parent) || (ts.isVariableDeclarationList(node.parent) && (node.parent.flags & ts.NodeFlags.BlockScoped) !== 0);
+      for (const name of declaredNames(node.name)) add(name, scopeOf(node, blockScoped));
+    } else if (ts.isParameter(node)) {
+      for (const name of declaredNames(node.name)) add(name, node.parent);
+    } else if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) && node.name) {
+      add(node.name.text, scopeOf(node, true));
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  scopesByFile.set(source, scopes);
+}
+
+// True when `name` is redeclared in a scope enclosing `use`. A file-level declaration of a bound name is the binding itself.
+function isShadowed(use: ts.Node, name: string, bound: boolean): boolean {
+  const source = use.getSourceFile();
+  return (scopesByFile.get(source)?.get(name) ?? []).some((scope) => (!bound || !ts.isSourceFile(scope)) && use.pos >= scope.pos && use.end <= scope.end);
 }
 
 function callTarget(expression: ts.LeftHandSideExpression, bindings: Map<string, Binding | null>, declarations: Map<string, ts.VariableDeclaration | null>): Binding | null {
-  if (ts.isIdentifier(expression)) return bindings.get(expression.text) ?? null;
+  const extend = (parent: Binding | null, name: string | null): Binding | null =>
+    parent && name ? { ...parent, imported: parent.imported ? `${parent.imported}.${name}` : name } : null;
+  if (ts.isIdentifier(expression)) {
+    const bound = bindings.has(expression.text);
+    if (isShadowed(expression, expression.text, bound)) return null;
+    if (bound) return bindings.get(expression.text) ?? null;
+    // An undeclared `crypto` is the WebCrypto global.
+    return expression.text === 'crypto' ? { module: 'crypto' } : null;
+  }
+  if (ts.isCallExpression(expression) && expression.arguments.length === 1 && ts.isIdentifier(expression.expression) && expression.expression.text === 'require' && !bindings.has('require')) {
+    const module = literal(expression.arguments[0], declarations);
+    return module === null ? null : { module };
+  }
   if (ts.isPropertyAccessExpression(expression)) {
-    const parent = callTarget(expression.expression, bindings, declarations);
-    return parent ? { ...parent, imported: expression.name.text } : null;
+    if (ts.isIdentifier(expression.expression) && globals.has(expression.expression.text) && expression.name.text === 'crypto' && !bindings.has(expression.expression.text) && !isShadowed(expression.expression, expression.expression.text, false)) return { module: 'crypto' };
+    return extend(callTarget(expression.expression, bindings, declarations), expression.name.text);
   }
   if (ts.isElementAccessExpression(expression)) {
-    const parent = callTarget(expression.expression, bindings, declarations);
-    const name = literal(expression.argumentExpression, declarations);
-    return parent && name ? { ...parent, imported: name } : null;
+    return extend(callTarget(expression.expression, bindings, declarations), literal(expression.argumentExpression, declarations));
   }
   return null;
 }
 
-function addImports(source: ts.SourceFile, bindings: Map<string, Binding | null>, declarations: Map<string, ts.VariableDeclaration | null>): void {
+function addImports(source: ts.SourceFile, rules: ModuleRules[], bindings: Map<string, Binding | null>, declarations: Map<string, ts.VariableDeclaration | null>): void {
   const bind = (name: string, value: Binding): void => {
     bindings.set(name, bindings.has(name) ? null : value);
   };
@@ -82,18 +161,67 @@ function addImports(source: ts.SourceFile, bindings: Map<string, Binding | null>
     }
     if (ts.isVariableDeclaration(node)) {
       if (ts.isIdentifier(node.name)) declare(node.name.text, node);
-      const initializer = node.initializer;
-      if (initializer && ts.isCallExpression(initializer) && ts.isIdentifier(initializer.expression) && initializer.expression.text === 'require' && ts.isStringLiteralLike(initializer.arguments[0])) {
-        const module = initializer.arguments[0].text;
-        if (ts.isIdentifier(node.name)) bind(node.name.text, { module });
-        if (ts.isObjectBindingPattern(node.name)) for (const item of node.name.elements) {
-          if (ts.isIdentifier(item.name)) bind(item.name.text, { module, imported: item.propertyName?.getText() ?? item.name.text });
-        }
-      }
     }
     ts.forEachChild(node, visit);
   };
   visit(source);
+
+  // Second pass: aliases, destructuring from a bound module, and dynamic require/import with constant specifiers.
+  const pending: ts.VariableDeclaration[] = [];
+  const collect = (node: ts.Node): void => {
+    if (ts.isVariableDeclaration(node) && node.initializer) pending.push(node);
+    ts.forEachChild(node, collect);
+  };
+  collect(source);
+  const moduleOf = (expression: ts.Expression, isConst: boolean): Binding | null => {
+    while (ts.isAwaitExpression(expression) || ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression)) expression = expression.expression;
+    if (ts.isNewExpression(expression)) {
+      const made = callTarget(expression.expression as ts.LeftHandSideExpression, bindings, declarations);
+      return made && findModuleRules(rules, made)?.constructs?.includes(made.imported ?? '') ? { module: 'crypto' } : null;
+    }
+    if (ts.isCallExpression(expression) && expression.arguments.length === 1) {
+      const callee = expression.expression;
+      const isRequire = ts.isIdentifier(callee) && callee.text === 'require' && !bindings.has('require');
+      if (isRequire || callee.kind === ts.SyntaxKind.ImportKeyword) {
+        const module = literal(expression.arguments[0], declarations);
+        return module === null ? null : { module };
+      }
+      return null;
+    }
+    return isConst && (ts.isIdentifier(expression) || ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression))
+      ? callTarget(expression, bindings, declarations)
+      : null;
+  };
+  for (let changed = true, rounds = 0; changed && rounds < 5; rounds++) {
+    changed = false;
+    for (let index = pending.length - 1; index >= 0; index--) {
+      const node = pending[index];
+      const source = moduleOf(node.initializer!, (node.parent.flags & ts.NodeFlags.Const) !== 0);
+      if (!source) continue;
+      pending.splice(index, 1);
+      changed = true;
+      const join = (name: string): Binding => ({ ...source, imported: source.imported ? `${source.imported}.${name}` : name });
+      if (ts.isIdentifier(node.name)) bind(node.name.text, source);
+      else if (ts.isObjectBindingPattern(node.name)) for (const item of node.name.elements) {
+        if (ts.isIdentifier(item.name) && !item.dotDotDotToken) bind(item.name.text, join(item.propertyName?.getText() ?? item.name.text));
+      }
+    }
+  }
+}
+
+// A reference that is stored, passed, or returned rather than called, so later uses cannot be followed.
+function isEscape(node: ts.Node): boolean {
+  if (!ts.isIdentifier(node) && !ts.isPropertyAccessExpression(node) && !ts.isElementAccessExpression(node)) return false;
+  const parent = node.parent;
+  if ((ts.isPropertyAccessExpression(parent) || ts.isElementAccessExpression(parent)) && parent.expression === node) return false;
+  if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
+  if (ts.isCallExpression(parent)) return parent.arguments.includes(node as ts.Expression);
+  if (ts.isNewExpression(parent)) return parent.arguments?.includes(node as ts.Expression) ?? false;
+  if (ts.isPropertyAssignment(parent)) return parent.initializer === node;
+  if (ts.isShorthandPropertyAssignment(parent)) return parent.name === node;
+  if (ts.isVariableDeclaration(parent)) return parent.initializer === node && (!ts.isIdentifier(parent.name) && !ts.isObjectBindingPattern(parent.name) || (parent.parent.flags & ts.NodeFlags.Const) === 0);
+  return ts.isArrayLiteralExpression(parent) || ts.isSpreadElement(parent) || ts.isReturnStatement(parent) || ts.isExportAssignment(parent)
+    || (ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.EqualsToken && parent.right === node);
 }
 
 function findModuleRules(rules: ModuleRules[], target: Binding): ModuleRules | undefined {
@@ -114,12 +242,21 @@ export function scanSource(text: string, file: string, rules: ModuleRules[]): Fi
   }
   const bindings = new Map<string, Binding | null>();
   const declarations = new Map<string, ts.VariableDeclaration | null>();
-  addImports(source, bindings, declarations);
+  recordScopes(source);
+  addImports(source, rules, bindings, declarations);
   const findings: Finding[] = [];
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
-      const target = callTarget(node.expression, bindings, declarations);
-      if (target) {
+      const found = callTarget(node.expression, bindings, declarations);
+      if (found) {
+        let target = found;
+        let args: readonly ts.Expression[] = node.arguments;
+        const via = /^(.*)\.(call|apply)$/.exec(found.imported ?? '');
+        if (via && findModuleRules(rules, found)?.rules.some((candidate) => candidate.functions.includes(via[1]))) {
+          target = { ...found, imported: via[1] };
+          const list = node.arguments[1];
+          args = via[2] === 'call' ? node.arguments.slice(1) : list && ts.isArrayLiteralExpression(list) ? list.elements : [];
+        }
         const moduleRules = findModuleRules(rules, target);
         const rule = moduleRules?.rules.find((candidate) => candidate.functions.includes(target.imported ?? ''));
         const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
@@ -128,17 +265,38 @@ export function scanSource(text: string, file: string, rules: ModuleRules[]): Fi
           // A local function or unrelated package may share a crypto-like API name.
         } else if (!rule) {
           findings.push(finding(file, line, 'unhandled-crypto-api', 'unknown', null, 'unresolved', `Recognized crypto module call "${target.imported ?? 'unknown'}" has no rule.`, trace));
+        } else if (rule.ignore) {
+          // Operates on an existing key; the algorithm is reported where the key is created or imported.
         } else if (rule.algorithm && rule.status) {
           findings.push(finding(file, line, rule.id, rule.category, rule.algorithm, rule.status, undefined, trace));
-        } else if (rule.algorithmFrom) {
-          const argument = node.arguments[rule.algorithmFrom.arg];
-          const value = rule.algorithmFrom.property
-            ? propertyLiteral(argument, rule.algorithmFrom.property, declarations)
-            : literal(argument, declarations);
-          const match = value === null ? undefined : rule.values?.[value] ?? rule.values?.[value.toLowerCase()];
-          if (!match) findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', value === null ? 'Algorithm could not be statically resolved.' : `Algorithm "${value}" has no rule.`, trace));
-          else findings.push(finding(file, line, rule.id, rule.category, match.algorithm, match.status, match.note, trace));
+        } else if (!rule.algorithmFrom) {
+          findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', rule.note, trace));
+        } else {
+          const argument = args[rule.algorithmFrom.arg];
+          const single = literal(argument, declarations);
+          const names = rule.algorithmFrom.property
+            ? propertyLiterals(argument, rule.algorithmFrom.property, declarations) ?? (single === null ? null : [single])
+            : single === null ? null : [single];
+          const values = rule.values ?? {};
+          const qualifiers = (rule.qualifiers ?? []).map((property) => propertyLiteral(argument, property, declarations)).filter((item): item is string => item !== null);
+          if (!names) findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', 'Algorithm could not be statically resolved.', trace));
+          for (const value of names ?? []) {
+            const base = value.toLowerCase();
+            const key = [...qualifiers.map((item) => `${base}-${item.toLowerCase()}`), value, base].find((candidate) => Object.hasOwn(values, candidate));
+            const match = key === undefined ? undefined : values[key];
+            if (!match) findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', `Algorithm "${value}" has no rule.`, trace));
+            else findings.push(finding(file, line, rule.id, rule.category, match.algorithm, match.status, match.note, trace));
+          }
         }
+      }
+    }
+    if (isEscape(node)) {
+      const target = callTarget(node as ts.LeftHandSideExpression, bindings, declarations);
+      const moduleRules = target && findModuleRules(rules, target);
+      const known = target && moduleRules && (target.imported === undefined || moduleRules.rules.some((rule) => rule.functions.includes(target.imported!)));
+      if (target && known) {
+        const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+        findings.push(finding(file, line, 'crypto-reference-escapes', 'unknown', null, 'unresolved', `Reference to ${target.imported ?? target.module} is stored or passed as a value; later calls cannot be tracked.`, [{ note: `resolved ${target.imported ?? 'module'} from ${target.module}` }]));
       }
     }
     ts.forEachChild(node, visit);

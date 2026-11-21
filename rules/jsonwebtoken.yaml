@@ -1,15 +1,42 @@
 module: [jsonwebtoken]
 rules:
   - id: jwt-sign
-    functions: [sign, verify]
+    functions: [sign]
     category: signature
     algorithmFrom: { arg: 2, property: algorithm }
     values:
-      RS256: { algorithm: RSA, status: vulnerable }
-      RS384: { algorithm: RSA, status: vulnerable }
-      RS512: { algorithm: RSA, status: vulnerable }
-      PS256: { algorithm: RSA-PSS, status: vulnerable }
-      ES256: { algorithm: ECDSA, status: vulnerable }
-      ES384: { algorithm: ECDSA, status: vulnerable }
-      EdDSA: { algorithm: EdDSA, status: vulnerable }
+      RS256: { algorithm: RSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      RS384: { algorithm: RSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      RS512: { algorithm: RSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      PS256: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      PS384: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      PS512: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES256: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES384: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES512: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES256K: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      EdDSA: { algorithm: EdDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
       HS256: { algorithm: HMAC-SHA256, status: observed-resistant }
+      HS384: { algorithm: HMAC-SHA384, status: observed-resistant }
+      HS512: { algorithm: HMAC-SHA512, status: observed-resistant }
+      none: { algorithm: none, status: unresolved, note: "Unsigned token; no cryptographic protection." }
+  - id: jwt-verify
+    functions: [verify]
+    category: signature
+    algorithmFrom: { arg: 2, property: algorithms }
+    values:
+      RS256: { algorithm: RSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      RS384: { algorithm: RSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      RS512: { algorithm: RSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      PS256: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      PS384: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      PS512: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES256: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES384: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES512: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      ES256K: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      EdDSA: { algorithm: EdDSA, status: vulnerable, note: "Classical public-key signatures are vulnerable to Shor's algorithm." }
+      HS256: { algorithm: HMAC-SHA256, status: observed-resistant }
+      HS384: { algorithm: HMAC-SHA384, status: observed-resistant }
+      HS512: { algorithm: HMAC-SHA512, status: observed-resistant }
+      none: { algorithm: none, status: unresolved, note: "Unsigned token; no cryptographic protection." }

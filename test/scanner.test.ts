@@ -55,7 +55,7 @@ describe('JavaScript and TypeScript crypto inventory', () => {
   });
 
   it('reports unhandled calls on a recognized crypto module', () => {
-    expect(compact("import * as crypto from 'crypto';\ncrypto.createPrivateKey('pem');"))
+    expect(compact("import * as crypto from 'crypto';\ncrypto.scryptSync('pw', 'salt', 32);"))
       .toEqual([{ algorithm: null, status: 'unresolved', ruleId: 'unhandled-crypto-api', line: 2, category: 'unknown' }]);
   });
 
@@ -85,5 +85,50 @@ describe('JavaScript and TypeScript crypto inventory', () => {
         { algorithm: 'SHA-256', status: 'observed-resistant', ruleId: 'node-hash', line: 2, category: 'hash' },
         { algorithm: 'RSA', status: 'vulnerable', ruleId: 'node-rsa-encrypt', line: 3, category: 'encryption' },
       ]);
+  });
+});
+
+describe('legacy and mid-strength primitives are named, not anonymous', () => {
+  it.each([
+    ["createHash('sha1')", 'SHA-1'],
+    ["createHash('md5')", 'MD5'],
+    ["createHmac('sha1', k)", 'HMAC-SHA-1'],
+    ["createCipheriv('aes-128-cbc', k, iv)", 'AES-128-CBC'],
+    ["createCipheriv('aes-192-gcm', k, iv)", 'AES-192-GCM'],
+  ])('%s', (call, algorithm) => {
+    expect(compact(`import { createHash, createHmac, createCipheriv } from 'crypto';\n${call};`)).toMatchObject([{ algorithm }]);
+  });
+});
+
+describe('JWT libraries', () => {
+  it('reads jsonwebtoken verify options.algorithms (array), one finding per algorithm', () => {
+    expect(compact("import jwt from 'jsonwebtoken';\njwt.verify(token, key, { algorithms: ['RS256', 'HS256'] });"))
+      .toEqual([
+        { algorithm: 'RSA', status: 'vulnerable', ruleId: 'jwt-verify', line: 2, category: 'signature' },
+        { algorithm: 'HMAC-SHA256', status: 'observed-resistant', ruleId: 'jwt-verify', line: 2, category: 'signature' },
+      ]);
+  });
+
+  it('leaves jsonwebtoken verify unresolved when algorithms is omitted or partly dynamic', () => {
+    expect(compact("import jwt from 'jsonwebtoken';\njwt.verify(token, key);\njwt.verify(token, key, { algorithms: ['RS256', pick()] });").map((item) => item.status))
+      .toEqual(['unresolved', 'unresolved']);
+  });
+
+  it('flags the unsigned "none" algorithm as unresolved', () => {
+    expect(compact("import jwt from 'jsonwebtoken';\njwt.sign({}, '', { algorithm: 'none' });")).toMatchObject([{ algorithm: 'none', status: 'unresolved' }]);
+  });
+
+  it.each([
+    ["jws.sign({ header: { alg: 'ES256' }, payload, privateKey });", 'ECDSA', 'jws-sign'],
+    ["jws.createSign({ header: { alg: 'RS256' }, privateKey });", 'RSA', 'jws-sign'],
+    ["jws.createVerify({ algorithm: 'PS256', key });", 'RSA-PSS', 'jws-verify'],
+    ["jws.verify(signature, 'HS256', secret);", 'HMAC-SHA256', 'jws-verify-call'],
+  ])('jws: %s', (call, algorithm, ruleId) => {
+    expect(compact(`import jws from 'jws';\n${call}`)).toMatchObject([{ algorithm, ruleId }]);
+  });
+
+  it('reports a dynamic jws header algorithm as unresolved and ignores decode', () => {
+    expect(compact("import jws from 'jws';\njws.sign({ header: { alg: pick() }, payload, secret });\njws.decode(sig);"))
+      .toMatchObject([{ ruleId: 'jws-sign', status: 'unresolved', algorithm: null }]);
   });
 });

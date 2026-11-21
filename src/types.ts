@@ -1,6 +1,6 @@
 export type Status = 'vulnerable' | 'observed-resistant' | 'unresolved';
 
-export type Category = 'keygen' | 'key-exchange' | 'encryption' | 'signature' | 'symmetric' | 'hash' | 'unknown';
+export type Category = 'keygen' | 'key-exchange' | 'encryption' | 'signature' | 'symmetric' | 'hash' | 'random' | 'unknown';
 
 export interface TraceStep {
   note: string;
@@ -28,12 +28,17 @@ export interface Rule {
   functions: string[];
   category: Category;
   algorithm?: string;
-  status?: Exclude<Status, 'unresolved'>;
+  status?: Status;
   algorithmFrom?: { arg: number; property?: string };
   values?: Record<string, AlgorithmValue>;
+  qualifiers?: string[];
+  ignore?: boolean;
+  note?: string;
 }
 
 export interface ModuleRules {
   module: string[];
   rules: Rule[];
+  /** Constructors whose instances are WebCrypto objects (`new Crypto()` from a polyfill). */
+  constructs?: string[];
 }
