@@ -1,0 +1,15 @@
+module: [jsonwebtoken]
+rules:
+  - id: jwt-sign
+    functions: [sign, verify]
+    category: signature
+    algorithmFrom: { arg: 2, property: algorithm }
+    values:
+      RS256: { algorithm: RSA, status: vulnerable }
+      RS384: { algorithm: RSA, status: vulnerable }
+      RS512: { algorithm: RSA, status: vulnerable }
+      PS256: { algorithm: RSA-PSS, status: vulnerable }
+      ES256: { algorithm: ECDSA, status: vulnerable }
+      ES384: { algorithm: ECDSA, status: vulnerable }
+      EdDSA: { algorithm: EdDSA, status: vulnerable }
+      HS256: { algorithm: HMAC-SHA256, status: observed-resistant }
