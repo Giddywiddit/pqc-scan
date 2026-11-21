@@ -19,7 +19,7 @@ rules:
       HS256: { algorithm: HMAC-SHA256, status: observed-resistant }
       HS384: { algorithm: HMAC-SHA384, status: observed-resistant }
       HS512: { algorithm: HMAC-SHA512, status: observed-resistant }
-      none: { algorithm: none, status: unresolved, note: "Unsigned token; no cryptographic protection." }
+      none: { algorithm: none, status: needs-review, note: "Unsigned token; no cryptographic protection." }
   - id: jwt-verify
     functions: [verify]
     category: signature
@@ -39,4 +39,4 @@ rules:
       HS256: { algorithm: HMAC-SHA256, status: observed-resistant }
       HS384: { algorithm: HMAC-SHA384, status: observed-resistant }
       HS512: { algorithm: HMAC-SHA512, status: observed-resistant }
-      none: { algorithm: none, status: unresolved, note: "Unsigned token; no cryptographic protection." }
+      none: { algorithm: none, status: needs-review, note: "Unsigned token; no cryptographic protection." }

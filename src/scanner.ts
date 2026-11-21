@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { basename, extname, join, relative } from 'node:path';
+import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import ts from 'typescript';
 import type { Finding, ModuleRules, Rule, Status } from './types.ts';
 
@@ -41,22 +41,22 @@ function literal(node: ts.Expression | undefined, declarations: Map<string, ts.V
 type Declarations = Map<string, ts.VariableDeclaration | null>;
 
 // Strips wrappers and follows const identifiers to the expression they hold.
-function resolve(node: ts.Expression | undefined, declarations: Declarations): ts.Expression | undefined {
+function resolveConst(node: ts.Expression | undefined, declarations: Declarations): ts.Expression | undefined {
   while (node && (ts.isAsExpression(node) || ts.isParenthesizedExpression(node) || ts.isTypeAssertionExpression(node))) node = node.expression;
   if (node && ts.isIdentifier(node)) {
     const declaration = declarations.get(node.text);
-    if (declaration && (declaration.parent.flags & ts.NodeFlags.Const) !== 0) return resolve(declaration.initializer, declarations);
+    if (declaration && (declaration.parent.flags & ts.NodeFlags.Const) !== 0) return resolveConst(declaration.initializer, declarations);
   }
   return node;
 }
 
 // Walks a dotted property path (`header.alg`) through object literals.
 function propertyNode(node: ts.Expression | undefined, path: string[], declarations: Declarations): ts.Expression | undefined {
-  let current = resolve(node, declarations);
+  let current = resolveConst(node, declarations);
   for (const key of path) {
     if (!current || !ts.isObjectLiteralExpression(current)) return undefined;
     const found = current.properties.find((item) => ts.isPropertyAssignment(item) && item.name.getText() === key);
-    current = found && ts.isPropertyAssignment(found) ? resolve(found.initializer, declarations) : undefined;
+    current = found && ts.isPropertyAssignment(found) ? resolveConst(found.initializer, declarations) : undefined;
   }
   return current;
 }
@@ -305,7 +305,58 @@ export function scanSource(text: string, file: string, rules: ModuleRules[]): Fi
   return findings;
 }
 
+const resolvable = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
+
+function localImports(text: string, file: string): { specifier: string; line: number }[] {
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const found: { specifier: string; line: number }[] = [];
+  const add = (node: ts.Node, specifier: string | undefined): void => {
+    if (specifier?.startsWith('.')) found.push({ specifier, line: source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1 });
+  };
+  const visit = (node: ts.Node): void => {
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      const specifier = node.moduleSpecifier;
+      if (specifier && ts.isStringLiteral(specifier)) add(node, specifier.text);
+    }
+    if (ts.isCallExpression(node) && node.arguments.length === 1 && ts.isStringLiteralLike(node.arguments[0])
+      && ((ts.isIdentifier(node.expression) && node.expression.text === 'require') || node.expression.kind === ts.SyntaxKind.ImportKeyword)) add(node, node.arguments[0].text);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
+function resolveLocal(from: string, specifier: string, known: Set<string>): string | undefined {
+  const base = resolve(dirname(from), specifier);
+  const stem = base.replace(/\.(m|c)?jsx?$/, '');
+  const candidates = [base, ...resolvable.flatMap((ext) => [base + ext, stem + ext, join(base, `index${ext}`)])];
+  return candidates.find((candidate) => known.has(candidate));
+}
+
 export function scan(target: string, rules: ModuleRules[]): Finding[] {
   const root = statSync(target).isDirectory() ? target : undefined;
-  return sourceFiles(target).flatMap((path) => scanSource(readFileSync(path, 'utf8'), root ? relative(root, path) : basename(path), rules));
+  const files = sourceFiles(target).map((path) => {
+    const text = readFileSync(path, 'utf8');
+    const name = root ? relative(root, path) : basename(path);
+    return { path, text, name, findings: scanSource(text, name, rules) };
+  });
+  if (root) {
+    // A module whose algorithm comes from a parameter (or that lets a crypto reference escape) is a wrapper: its importers
+    // may be choosing the algorithm, and that flow is not tracked across files.
+    const known = new Set(files.map((item) => item.path));
+    const isDynamic = (entry: Finding): boolean => entry.ruleId === 'crypto-reference-escapes' || entry.note === 'Algorithm could not be statically resolved.';
+    const bearing = new Map(files.map((item) => [item.path, item.findings.filter(isDynamic).length] as const).filter(([, count]) => count > 0));
+    for (const item of files) {
+      const reported = new Set<string>();
+      for (const { specifier, line } of localImports(item.text, item.name)) {
+        const resolved = resolveLocal(item.path, specifier, known);
+        if (!resolved || resolved === item.path || !bearing.has(resolved) || reported.has(resolved)) continue;
+        reported.add(resolved);
+        item.findings.push(finding(item.name, line, 'crypto-via-local-module', 'unknown', null, 'unresolved',
+          `Imports ${specifier}, which has ${bearing.get(resolved)} crypto call(s) whose algorithm is decided by its callers; that flow is not tracked across files.`));
+      }
+      item.findings.sort((left, right) => left.line - right.line);
+    }
+  }
+  return files.flatMap((item) => item.findings);
 }

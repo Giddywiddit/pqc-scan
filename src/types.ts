@@ -1,4 +1,4 @@
-export type Status = 'vulnerable' | 'observed-resistant' | 'unresolved';
+export type Status = 'vulnerable' | 'observed-resistant' | 'needs-review' | 'unresolved';
 
 export type Category = 'keygen' | 'key-exchange' | 'encryption' | 'signature' | 'symmetric' | 'hash' | 'random' | 'unknown';
 

@@ -43,10 +43,10 @@ describe('WebCrypto', () => {
   it.each([
     ["{ name: 'AES-GCM', length: 256 }", 'AES-256-GCM', 'observed-resistant'],
     ["{ name: 'AES-CBC', length: 192 }", 'AES-192-CBC', 'observed-resistant'],
-    ["{ name: 'AES-GCM', length: 128 }", 'AES-128-GCM', 'unresolved'],
+    ["{ name: 'AES-GCM', length: 128 }", 'AES-128-GCM', 'needs-review'],
     ["{ name: 'HMAC', hash: 'SHA-256' }", 'HMAC-SHA-256', 'observed-resistant'],
     ["{ name: 'HMAC', hash: { name: 'SHA-512' } }", 'HMAC-SHA-512', 'observed-resistant'],
-    ["{ name: 'HMAC', hash: 'SHA-1' }", 'HMAC-SHA-1', 'unresolved'],
+    ["{ name: 'HMAC', hash: 'SHA-1' }", 'HMAC-SHA-1', 'needs-review'],
     ["{ name: 'AES-GCM' }", 'AES-GCM', 'unresolved'],
     ["{ name: 'HMAC' }", 'HMAC', 'unresolved'],
   ])('generateKey %s resolves key length or hash', (algorithm, expected, status) => {
@@ -101,7 +101,7 @@ describe('additional Node crypto APIs', () => {
     ["import { createHash } from 'crypto';\ncreateHash('sha3-256');", 'SHA3-256', 'node-hash'],
     ["import { createCipheriv } from 'crypto';\ncreateCipheriv('chacha20-poly1305', k, n);", 'ChaCha20-Poly1305', 'node-cipher'],
     ["import { generateKeyPairSync } from 'crypto';\ngenerateKeyPairSync('x448');", 'X448', 'node-keygen'],
-    ["import { sign } from 'crypto';\nsign('sha256', data, key);", 'RSA', 'node-oneshot-signature'],
+    ["import { sign } from 'crypto';\nsign('sha256', data, key);", 'RSA/ECDSA', 'node-oneshot-signature'],
   ])('%s', (code, algorithm, ruleId) => {
     expect(compact(code)).toMatchObject([{ algorithm, ruleId }]);
   });

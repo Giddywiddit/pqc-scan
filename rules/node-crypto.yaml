@@ -37,7 +37,7 @@ rules:
       rsa-sha256: { algorithm: RSA, status: vulnerable }
       rsa-sha384: { algorithm: RSA, status: vulnerable }
       rsa-sha512: { algorithm: RSA, status: vulnerable }
-      sha256: { algorithm: RSA, status: vulnerable, note: "Node createSign requires an asymmetric key; key type needs review." }
+      sha256: { algorithm: RSA/ECDSA, status: vulnerable, note: "Node createSign requires an asymmetric key; RSA or ECDSA, key type not resolved." }
   - id: node-cipher
     functions: [createCipheriv, createDecipheriv]
     category: symmetric
@@ -47,12 +47,12 @@ rules:
       aes-256-cbc: { algorithm: AES-256-CBC, status: observed-resistant }
       aes-256-ctr: { algorithm: AES-256-CTR, status: observed-resistant }
       chacha20-poly1305: { algorithm: ChaCha20-Poly1305, status: observed-resistant }
-      aes-128-gcm: { algorithm: AES-128-GCM, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-128-gcm: { algorithm: AES-128-GCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
       aes-192-gcm: { algorithm: AES-192-GCM, status: observed-resistant }
       aes-192-cbc: { algorithm: AES-192-CBC, status: observed-resistant }
       aes-192-ctr: { algorithm: AES-192-CTR, status: observed-resistant }
-      aes-128-cbc: { algorithm: AES-128-CBC, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
-      aes-128-ctr: { algorithm: AES-128-CTR, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-128-cbc: { algorithm: AES-128-CBC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-128-ctr: { algorithm: AES-128-CTR, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
   - id: node-hash
     functions: [createHash]
     category: hash
@@ -62,8 +62,8 @@ rules:
       sha384: { algorithm: SHA-384, status: observed-resistant }
       sha512: { algorithm: SHA-512, status: observed-resistant }
       sha3-256: { algorithm: SHA3-256, status: observed-resistant }
-      sha1: { algorithm: SHA-1, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
-      md5: { algorithm: MD5, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
+      sha1: { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      md5: { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
       sha3-384: { algorithm: SHA3-384, status: observed-resistant }
       sha3-512: { algorithm: SHA3-512, status: observed-resistant }
   - id: node-hmac
@@ -74,16 +74,16 @@ rules:
       sha256: { algorithm: HMAC-SHA-256, status: observed-resistant }
       sha384: { algorithm: HMAC-SHA-384, status: observed-resistant }
       sha512: { algorithm: HMAC-SHA-512, status: observed-resistant }
-      sha1: { algorithm: HMAC-SHA-1, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
-      md5: { algorithm: HMAC-MD5, status: unresolved, note: "Classically weak; migrate regardless of quantum risk." }
+      sha1: { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      md5: { algorithm: HMAC-MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
   - id: node-oneshot-signature
     functions: [sign, verify]
     category: signature
     algorithmFrom: { arg: 0 }
     values:
-      sha256: { algorithm: RSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; key type needs review." }
-      sha384: { algorithm: RSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; key type needs review." }
-      sha512: { algorithm: RSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; key type needs review." }
+      sha256: { algorithm: RSA/ECDSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; RSA or ECDSA, key type not resolved." }
+      sha384: { algorithm: RSA/ECDSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; RSA or ECDSA, key type not resolved." }
+      sha512: { algorithm: RSA/ECDSA, status: vulnerable, note: "crypto.sign requires an asymmetric key; RSA or ECDSA, key type not resolved." }
   - id: node-random
     functions: [randomBytes, randomFillSync, randomFill, randomInt, randomUUID, getRandomValues, webcrypto.getRandomValues, webcrypto.randomUUID]
     category: random
@@ -116,21 +116,21 @@ rules:
       aes-kw: { algorithm: AES-KW, status: unresolved, note: "Key length is not resolved; AES-128 has reduced quantum security margin." }
       aes-kw-256: { algorithm: AES-256-KW, status: observed-resistant }
       aes-kw-192: { algorithm: AES-192-KW, status: observed-resistant }
-      aes-kw-128: { algorithm: AES-128-KW, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-kw-128: { algorithm: AES-128-KW, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
       hmac: { algorithm: HMAC, status: unresolved, note: "Hash function is not resolved; review." }
       aes-gcm-256: { algorithm: AES-256-GCM, status: observed-resistant }
       aes-gcm-192: { algorithm: AES-192-GCM, status: observed-resistant }
-      aes-gcm-128: { algorithm: AES-128-GCM, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-gcm-128: { algorithm: AES-128-GCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
       aes-cbc-256: { algorithm: AES-256-CBC, status: observed-resistant }
       aes-cbc-192: { algorithm: AES-192-CBC, status: observed-resistant }
-      aes-cbc-128: { algorithm: AES-128-CBC, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-cbc-128: { algorithm: AES-128-CBC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
       aes-ctr-256: { algorithm: AES-256-CTR, status: observed-resistant }
       aes-ctr-192: { algorithm: AES-192-CTR, status: observed-resistant }
-      aes-ctr-128: { algorithm: AES-128-CTR, status: unresolved, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      aes-ctr-128: { algorithm: AES-128-CTR, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
       hmac-sha-256: { algorithm: HMAC-SHA-256, status: observed-resistant }
       hmac-sha-384: { algorithm: HMAC-SHA-384, status: observed-resistant }
       hmac-sha-512: { algorithm: HMAC-SHA-512, status: observed-resistant }
-      hmac-sha-1: { algorithm: HMAC-SHA-1, status: unresolved, note: "SHA-1 is weak classically; migrate." }
+      hmac-sha-1: { algorithm: HMAC-SHA-1, status: needs-review, note: "SHA-1 is weak classically; migrate." }
   - id: webcrypto-sign
     functions: [subtle.sign, subtle.verify, webcrypto.subtle.sign, webcrypto.subtle.verify]
     category: signature
@@ -165,7 +165,7 @@ rules:
       sha-256: { algorithm: SHA-256, status: observed-resistant }
       sha-384: { algorithm: SHA-384, status: observed-resistant }
       sha-512: { algorithm: SHA-512, status: observed-resistant }
-      sha-1: { algorithm: SHA-1, status: unresolved, note: "SHA-1 is weak classically; migrate." }
+      sha-1: { algorithm: SHA-1, status: needs-review, note: "SHA-1 is weak classically; migrate." }
   - id: webcrypto-key-export
     functions: [subtle.exportKey, webcrypto.subtle.exportKey, subtle.getPublicKey, webcrypto.subtle.getPublicKey]
     category: unknown

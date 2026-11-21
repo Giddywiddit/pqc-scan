@@ -1,0 +1,8 @@
+[
+  { "file": "consumer.ts", "line": 1, "ruleId": "crypto-via-local-module", "status": "unresolved" },
+  { "file": "dir-consumer.js", "line": 1, "ruleId": "crypto-via-local-module", "status": "unresolved" },
+  { "file": "esm-consumer.ts", "line": 1, "ruleId": "crypto-via-local-module", "status": "unresolved" },
+  { "file": "fixed.ts", "line": 3, "ruleId": "node-hash", "status": "observed-resistant" },
+  { "file": "helper.ts", "line": 4, "ruleId": "node-hash", "status": "unresolved" },
+  { "file": "lib/index.ts", "line": 3, "ruleId": "node-hash", "status": "unresolved" }
+]

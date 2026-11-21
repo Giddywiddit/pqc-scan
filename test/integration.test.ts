@@ -32,6 +32,23 @@ describe('filesystem scanning', () => {
     expect(scan(dir, loadRules()).map((item) => item.file)).toEqual(['real.ts']);
   });
 
+  it('flags importers of a wrapper whose algorithm is decided by its callers, across extensions and re-exports', () => {
+    const expected = JSON.parse(readFileSync(join(fixture('wrapper'), 'expected.json'), 'utf8'));
+    const actual = scan(fixture('wrapper'), loadRules())
+      .map(({ file, line, ruleId, status }) => ({ file, line, ruleId, status }))
+      .sort((a, b) => a.file.localeCompare(b.file));
+    expect(actual).toEqual(expected);
+  });
+
+  it('does not flag importers of a module that only has fixed algorithms, nor a file importing itself', () => {
+    const files = scan(fixture('wrapper'), loadRules()).filter((item) => item.ruleId === 'crypto-via-local-module').map((item) => item.file);
+    expect(files).not.toContain('fixed-consumer.ts');
+  });
+
+  it('does not resolve local imports when scanning a single file', () => {
+    expect(scan(join(fixture('wrapper'), 'consumer.ts'), loadRules())).toEqual([]);
+  });
+
   it('scans a single file target', () => {
     const findings = scan(join(fixture('mixed'), 'keys.js'), loadRules());
     expect(findings).toHaveLength(1);

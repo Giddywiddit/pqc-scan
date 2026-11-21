@@ -76,7 +76,7 @@ describe('JavaScript and TypeScript crypto inventory', () => {
 
   it('reports AES-128 as review-required rather than quantum-safe', () => {
     expect(compact("import { createCipheriv } from 'crypto';\ncreateCipheriv('aes-128-gcm', key, nonce);"))
-      .toEqual([{ algorithm: 'AES-128-GCM', status: 'unresolved', ruleId: 'node-cipher', line: 2, category: 'symmetric' }]);
+      .toEqual([{ algorithm: 'AES-128-GCM', status: 'needs-review', ruleId: 'node-cipher', line: 2, category: 'symmetric' }]);
   });
 
   it('preserves multiple findings in source order', () => {
@@ -114,8 +114,8 @@ describe('JWT libraries', () => {
       .toEqual(['unresolved', 'unresolved']);
   });
 
-  it('flags the unsigned "none" algorithm as unresolved', () => {
-    expect(compact("import jwt from 'jsonwebtoken';\njwt.sign({}, '', { algorithm: 'none' });")).toMatchObject([{ algorithm: 'none', status: 'unresolved' }]);
+  it('flags the unsigned "none" algorithm for review', () => {
+    expect(compact("import jwt from 'jsonwebtoken';\njwt.sign({}, '', { algorithm: 'none' });")).toMatchObject([{ algorithm: 'none', status: 'needs-review' }]);
   });
 
   it.each([

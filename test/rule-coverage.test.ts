@@ -45,9 +45,9 @@ describe('rule files', () => {
     }
   });
 
-  it('gives every unresolved value an explanatory note', () => {
+  it('gives every unresolved or needs-review value an explanatory note', () => {
     const missing = groups.flatMap((group) => group.rules.flatMap((rule) => Object.entries(rule.values ?? {})
-      .filter(([, value]) => value.status === 'unresolved' && !value.note).map(([key]) => `${rule.id}:${key}`)));
+      .filter(([, value]) => (value.status === 'unresolved' || value.status === 'needs-review') && !value.note).map(([key]) => `${rule.id}:${key}`)));
     expect(missing).toEqual([]);
   });
 

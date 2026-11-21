@@ -22,7 +22,8 @@ const findings = scan(path, loadRules());
 if (json) console.log(JSON.stringify(findings, null, 2));
 else {
   for (const item of findings) console.log(`${item.status}\t${item.file}:${item.line}\t${item.algorithm ?? 'unknown'}\t${item.note ?? ''}`);
-  console.log(`\n${findings.length} finding(s); ${findings.filter((item) => item.status === 'unresolved').length} unresolved.`);
+  const count = (status: string) => findings.filter((item) => item.status === status).length;
+  console.log(`\n${findings.length} finding(s); ${count('vulnerable')} vulnerable, ${count('needs-review')} needs-review, ${count('unresolved')} unresolved.`);
 }
 
 process.exit(findings.some((item) => item.status !== 'observed-resistant') ? 1 : 0);
