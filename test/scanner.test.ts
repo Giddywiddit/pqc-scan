@@ -132,3 +132,10 @@ describe('JWT libraries', () => {
       .toMatchObject([{ ruleId: 'jws-sign', status: 'unresolved', algorithm: null }]);
   });
 });
+
+describe('post-quantum signature keys', () => {
+  it('recognizes SLH-DSA (FIPS 205) alongside ML-KEM and ML-DSA', () => {
+    expect(compact("import { generateKeyPairSync } from 'crypto';\ngenerateKeyPairSync('slh-dsa-sha2-128f');\ngenerateKeyPairSync('slh-dsa-shake-256s');"))
+      .toMatchObject([{ algorithm: 'SLH-DSA-SHA2-128f', status: 'observed-resistant' }, { algorithm: 'SLH-DSA-SHAKE-256s', status: 'observed-resistant' }]);
+  });
+});

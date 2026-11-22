@@ -24,9 +24,9 @@ describe('rule tables match what Node actually accepts', () => {
     try {
       generateKeyPairSync(type as 'rsa', options[type] as never);
     } catch (error) {
-      // ML-KEM and ML-DSA only exist on newer Node releases; any other failure means the name is wrong.
+      // ML-KEM, ML-DSA and SLH-DSA only exist on newer Node releases; any other failure means the name is wrong.
       const code = (error as { code?: string }).code;
-      expect(type.startsWith('ml-') && code === 'ERR_INVALID_ARG_VALUE').toBe(true);
+      expect(/^(ml|slh)-/.test(type) && code === 'ERR_INVALID_ARG_VALUE').toBe(true);
     }
   });
 });

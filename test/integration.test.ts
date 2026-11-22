@@ -102,11 +102,32 @@ describe('CLI contract', () => {
     expect(JSON.parse(result.stdout)).toMatchObject([{ status: 'observed-resistant' }]);
   });
 
-  it('prints a human summary without --json', () => {
+  it('prints the cat banner, a readable table and a verdict by default', () => {
     const result = cli(fixture('cli-vulnerable'));
     expect(result.status).toBe(1);
-    expect(result.stdout).toMatch(/vulnerable\tindex\.ts:2\tRSA/);
-    expect(result.stdout).toMatch(/1 finding\(s\)/);
+    expect(result.stdout).toMatch(/\/\\_\/\\/);
+    expect(result.stdout).toMatch(/❌ index\.ts:2\s+RSA\s+vulnerable/);
+    expect(result.stdout).toMatch(/1 finding\(s\): 1 vulnerable/);
+    expect(result.stdout).toMatch(/Quantum risk found/);
+  });
+
+  it('keeps --json output free of the banner so it can be piped', () => {
+    const result = cli(fixture('cli-vulnerable'), '--json');
+    expect(result.stdout.trimStart().startsWith('[')).toBe(true);
+    expect(result.stdout).not.toMatch(/pqc-scan •/);
+  });
+
+  it('hides the banner with --quiet', () => {
+    const result = cli(fixture('cli-observed'), '--quiet');
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toMatch(/pqc-scan •/);
+    expect(result.stdout).toMatch(/observed-resistant/);
+  });
+
+  it('says plainly that an empty scan is not a security conclusion', () => {
+    const result = cli(fixture('empty'), '--quiet');
+    expect(result.status).toBe(0);
+    expect(result.stdout).toMatch(/not a security conclusion/);
   });
 
   it('fails clearly for a nonexistent path', () => {

@@ -5,20 +5,32 @@ rules:
     category: keygen
     algorithmFrom: { arg: 0 }
     values:
-      rsa: { algorithm: RSA, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      rsa-pss: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      ec: { algorithm: EC, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      ed25519: { algorithm: Ed25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      x25519: { algorithm: X25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      ed448: { algorithm: Ed448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      x448: { algorithm: X448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      dh: { algorithm: DH, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      rsa: { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      rsa-pss: { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      ec: { algorithm: EC, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      ed25519: { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      x25519: { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      ed448: { algorithm: Ed448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      x448: { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      dh: { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
       ml-kem-512: { algorithm: ML-KEM-512, status: observed-resistant }
       ml-kem-768: { algorithm: ML-KEM-768, status: observed-resistant }
       ml-kem-1024: { algorithm: ML-KEM-1024, status: observed-resistant }
       ml-dsa-44: { algorithm: ML-DSA-44, status: observed-resistant }
       ml-dsa-65: { algorithm: ML-DSA-65, status: observed-resistant }
       ml-dsa-87: { algorithm: ML-DSA-87, status: observed-resistant }
+      slh-dsa-sha2-128f: { algorithm: SLH-DSA-SHA2-128f, status: observed-resistant }
+      slh-dsa-sha2-128s: { algorithm: SLH-DSA-SHA2-128s, status: observed-resistant }
+      slh-dsa-sha2-192f: { algorithm: SLH-DSA-SHA2-192f, status: observed-resistant }
+      slh-dsa-sha2-192s: { algorithm: SLH-DSA-SHA2-192s, status: observed-resistant }
+      slh-dsa-sha2-256f: { algorithm: SLH-DSA-SHA2-256f, status: observed-resistant }
+      slh-dsa-sha2-256s: { algorithm: SLH-DSA-SHA2-256s, status: observed-resistant }
+      slh-dsa-shake-128f: { algorithm: SLH-DSA-SHAKE-128f, status: observed-resistant }
+      slh-dsa-shake-128s: { algorithm: SLH-DSA-SHAKE-128s, status: observed-resistant }
+      slh-dsa-shake-192f: { algorithm: SLH-DSA-SHAKE-192f, status: observed-resistant }
+      slh-dsa-shake-192s: { algorithm: SLH-DSA-SHAKE-192s, status: observed-resistant }
+      slh-dsa-shake-256f: { algorithm: SLH-DSA-SHAKE-256f, status: observed-resistant }
+      slh-dsa-shake-256s: { algorithm: SLH-DSA-SHAKE-256s, status: observed-resistant }
   - id: node-rsa-encrypt
     functions: [publicEncrypt, privateDecrypt, publicDecrypt, privateEncrypt]
     category: encryption
@@ -95,15 +107,15 @@ rules:
     algorithmFrom: { arg: 0, property: name }
     qualifiers: [length, hash]
     values: &webcrypto-algorithms
-      rsassa-pkcs1-v1_5: { algorithm: RSA, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      rsa-pss: { algorithm: RSA-PSS, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      rsa-oaep: { algorithm: RSA-OAEP, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      ecdsa: { algorithm: ECDSA, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      ecdh: { algorithm: ECDH, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      ed25519: { algorithm: Ed25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      x25519: { algorithm: X25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      ed448: { algorithm: Ed448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      x448: { algorithm: X448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      rsassa-pkcs1-v1_5: { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      rsa-pss: { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      rsa-oaep: { algorithm: RSA-OAEP, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      ecdsa: { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      ecdh: { algorithm: ECDH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      ed25519: { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      x25519: { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      ed448: { algorithm: Ed448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      x448: { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
       ml-kem-512: { algorithm: ML-KEM-512, status: observed-resistant }
       ml-kem-768: { algorithm: ML-KEM-768, status: observed-resistant }
       ml-kem-1024: { algorithm: ML-KEM-1024, status: observed-resistant }
@@ -146,9 +158,9 @@ rules:
     category: key-exchange
     algorithmFrom: { arg: 0, property: name }
     values:
-      ecdh: { algorithm: ECDH, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      x25519: { algorithm: X25519, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
-      x448: { algorithm: X448, status: vulnerable, note: "Classical public-key cryptography is vulnerable to Shor's algorithm." }
+      ecdh: { algorithm: ECDH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      x25519: { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      x448: { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
       hkdf: { algorithm: HKDF, status: unresolved, note: "Hash function is not resolved; review." }
       pbkdf2: { algorithm: PBKDF2, status: unresolved, note: "Hash function is not resolved; review." }
   - id: webcrypto-import

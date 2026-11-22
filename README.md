@@ -1,54 +1,128 @@
-# pqc-scan
+# pqc-scan 🐱
 
-Conservative cryptographic inventory for JavaScript and TypeScript source code.
-
-`pqc-scan` reports evidence, not a readiness score. It never declares an application secure or post-quantum ready. A scan exits non-zero for any finding that is not `observed-resistant`.
-
-## Scope of the first release
-
-- JavaScript and TypeScript source files only.
-- Node.js `crypto`, WebCrypto (`crypto.subtle`, `globalThis.crypto`, `webcrypto`, `@peculiar/webcrypto` instances), `jsonwebtoken` and `jws` rules only.
-- Import aliases, CommonJS imports, computed property names, immutable constants, and immutable JWT options objects.
-- Unsupported calls, dynamic values, mutable values, duplicate bindings, and parse errors become **unresolved**.
-
-It does not yet scan deployed TLS configuration, certificate files, native binaries, dependencies as evidence of use, other languages, or cross-file data flow.
-
-## Known limitations
-
-**Reported as `unresolved`** (the scanner sees the call but cannot determine the algorithm): environment-driven or function-returned values, template literals with substitutions, string concatenation, spread arguments, function parameters, `let` bindings, ternaries, object property reads, WebCrypto/Node calls with no rule, key-material imports (`createPrivateKey`, `createPublicKey`, `createSecretKey`, `generateKey`), and crypto functions or modules that are stored, passed or returned as values (`crypto-reference-escapes`).
-
-**Followed**: aliases (`const k = crypto.generateKeyPairSync`), destructuring from an imported module, `require()` and `import()` with a constant specifier, inline `require('crypto').x()`, and `.call()` / `.apply()` with an array literal.
-
-**Cross-file wrappers** (directory scans only): when a local module has crypto calls whose algorithm comes from a parameter, each file that imports it gets a `crypto-via-local-module` finding. This is one level deep and does not follow the algorithm through the call chain, so the importer's actual choice still needs review.
-
-**Not detected at all** (the call cannot be attributed to a crypto module, so no finding is produced): `require()`/`import()` with a non-constant specifier, a single-file scan of a file that only calls a wrapper, wrapper chains deeper than one import, and `eval`. A clean result is therefore not proof that no cryptography is used. These cases are pinned by `test/unsupported.test.ts`.
-
-WebCrypto AES and HMAC are resolved from `length` and `hash` when they are literal in the parameters; otherwise they are `unresolved`. AES-128 is `needs-review` (reduced quantum security margin). `exportKey` and utilities such as `timingSafeEqual` produce no finding, because the algorithm is reported where the key is created or imported.
-
-## How it is tested
-
-- `test/scanner.test.ts`, `webcrypto.test.ts`, `unsupported.test.ts`: behaviour of the scanner on inline snippets, including every documented limitation.
-- `test/fixtures/{resolve,issues}/` with `fixture-corpus.test.ts`: real source files with inline `// expect: <algorithm> <status>` markers. Lines without a marker must produce no finding, so missing and unexpected findings both fail. Every fixed bug gets a file in `issues/`.
-- `test/rule-coverage.test.ts`: a call is generated for every function and every algorithm value in every rule file, so no rule or table entry ships untested.
-- `test/no-duplicates.test.ts`: one crypto call yields exactly one finding, however it was reached.
-- `test/integration.test.ts`: directory traversal, multi-file fixtures, rule-file validation, and the CLI contract (exit codes, JSON, errors) in a subprocess.
-
-## Development checks
-
-```sh
-npm install
-npm run typecheck
-npm test
-npm audit --audit-level=moderate
+```
+ /\_/\
+( 0.1 )    [ pqc-scan • Post-Quantum Cryptography Scanner ]
+ > ^ <     Finds the cryptography in your JavaScript and TypeScript
+           ---------------------------------------------------------
+           Looks for what quantum computers will break (NIST FIPS 203/204/205)
 ```
 
-## Status vocabulary
+**pqc-scan reads your JavaScript or TypeScript code and lists every place it uses cryptography, then tells you which of those uses a future quantum computer could break.**
 
-- `vulnerable`: a recognized classical public-key use vulnerable to Shor's algorithm.
-- `observed-resistant`: a recognized primitive with relevant quantum-resistant properties in the source.
-- `needs-review`: the algorithm is known, but it is not simply safe or Shor-vulnerable, so a human policy decision is needed (AES-128's reduced Grover margin, SHA-1 and MD5 which are classically weak, the unsigned JWT `none`).
-- `unresolved`: the scanner lacks enough static evidence to identify the algorithm, its key length or its hash. Review is required.
+*Cryptography* is the mathematics that keeps data secret (encryption), proves who sent something (digital signatures) and fingerprints data (hashing). Every time your code calls one of these, it names a specific method, called an *algorithm*, such as RSA or SHA-256. This tool finds those calls and tells you which algorithm each one uses.
 
-## Scope of the rule data
+## In short
 
-Rule tables are checked two ways: `rule-coverage.test.ts` proves the scanner agrees with them, and `rules-vs-node.test.ts` proves every cipher, hash and key type name is one Node actually accepts and that JOSE names match the RFC registry. Whether an algorithm is classed `vulnerable`, `observed-resistant` or `needs-review` is a judgment recorded in the rule files, not something a test can prove.
+- **The problem:** two widely used methods, RSA and elliptic-curve cryptography, protect most secure connections and signatures today. A powerful enough quantum computer could break both. Nobody has built one yet.
+- **Why act now:** an attacker can copy encrypted data today and unlock it years later, once such a computer exists.
+- **What this tool does:** it finds every use of cryptography in your code and labels it ❌ breakable by a quantum computer, ✅ believed safe, 🔍 needs a human decision, or ⚠️ could not be determined.
+- **What it does not do:** it never says your code is "quantum safe". It reports only what it can read in the code, and says so when it cannot tell.
+- **Safe to run:** it only reads files. It does not change your code, run it, or send anything over the internet.
+
+## Why quantum computers matter
+
+RSA and elliptic-curve cryptography are safe today because breaking them with an ordinary computer would take longer than the age of the universe. In 1994 a mathematician named Peter Shor published a method (Shor's algorithm) that a quantum computer could use to break both in hours or days instead.
+
+How close is that?
+
+- Today's quantum computers are small. Google's Willow chip, announced in 2024, has 105 quantum bits (qubits), and they make errors often.
+- A 2025 research paper estimated that breaking a 2048-bit RSA key (the size most websites use) would take fewer than one million error-prone qubits running for about a week.
+- Nobody knows when a machine that big will exist. The US standards body NIST has published a draft plan to stop allowing RSA and elliptic-curve keys after 2035.
+
+NIST has already published replacements that are believed to resist quantum computers: ML-KEM (for agreeing on secret keys), and ML-DSA and SLH-DSA (for digital signatures). Switching takes years, so the first step is to find where you use the old methods. That list is what this tool produces.
+
+## Try it
+
+You need [Node.js](https://nodejs.org) version 22 or newer (Node.js runs JavaScript outside a browser).
+
+```sh
+git clone https://github.com/Giddywiddit/pqc-scan.git
+cd pqc-scan
+npm install
+npm run scan -- path/to/your/project
+```
+
+Replace `path/to/your/project` with a folder or a single file. Example result:
+
+```
+Cryptography found:
+------------------------------------------------------------------------
+✅ index.ts:3                           SHA-256            observed-resistant
+❌ keys.js:3                            RSA                vulnerable
+     ℹ️  A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type.
+------------------------------------------------------------------------
+2 finding(s): 1 vulnerable, 0 needs-review, 0 unresolved, 1 observed-resistant.
+
+🚨 Quantum risk found: the ❌ items use cryptography a quantum computer could break. Plan their migration.
+```
+
+Each line reads: label, `file:line number`, the algorithm found, and the status word.
+
+Options:
+
+| Option | What it does |
+|---|---|
+| `--json` | Prints the results as structured data that other programs can read. The cat is left out so the output stays clean. |
+| `--quiet` | Hides the cat banner |
+
+## What the labels mean
+
+| Label | Meaning | What you should do |
+|---|---|---|
+| ❌ `vulnerable` | Uses RSA, elliptic curves or the older Diffie-Hellman key exchange. A quantum computer is expected to break these. | Plan to replace it with a NIST post-quantum method. |
+| ✅ `observed-resistant` | Uses a method believed to withstand quantum computers, for example the SHA-256 fingerprint method, 256-bit AES encryption, or ML-KEM. | Nothing. This describes that one line of code, not your whole program. |
+| 🔍 `needs-review` | We know exactly what it is, but whether it is acceptable is a judgement. Examples: 128-bit AES (a quantum computer halves its strength to about 64 bits, which some organisations consider too low), and the old fingerprint methods MD5 and SHA-1 (weak even against ordinary computers). | A person decides. |
+| ⚠️ `unresolved` | The code picks the method in a way the tool cannot read, for example from a setting read while the program runs, or from a value passed into a function. | Look at that line by hand. |
+
+The tool exits with status 0 (the "success" signal that automated checks look for) only when every finding is ✅ or nothing was found. Any other result exits with status 1, so you can use it to fail an automated check.
+
+## What it understands
+
+- **Languages:** JavaScript and TypeScript files (`.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, `.cts`).
+- **Cryptography libraries:**
+  - Node.js's built-in `crypto` module.
+  - WebCrypto (`crypto.subtle`), the cryptography toolkit built into web browsers and also available in Node.js.
+  - The `jsonwebtoken` and `jws` packages, which create and check login tokens.
+- **Ways of writing the code:** renamed imports (`import { createHash as h } from 'crypto'`), the algorithm stored in a constant (`const name = 'sha256'`), `require('crypto')`, and a function copied into another variable before it is called.
+
+## What it cannot see
+
+The tool reads code without running it. That means it has blind spots. Read this list before trusting a result.
+
+- **A clean result does not mean "no cryptography".** The tool misses cryptography that is reached in a way it cannot follow: loading a library whose name is built while the program runs (`require(someVariable)`), running text as code (`eval`), or hiding the call behind more than one level of helper files.
+- **Other languages are not covered.** Python, Java, Go, C# and C/C++ are not scanned yet. More languages are planned.
+- **Other cryptography libraries are not covered.** Only the libraries listed above. Cryptography built into a package you installed is not scanned unless you scan that package's own code.
+- **Code split across files is only partly followed.** If a helper file takes the algorithm as an argument, each file that imports the helper gets an ⚠️ note saying so. The tool does not trace which value each caller passes.
+- **It does not inspect** the encryption settings of a web server (TLS), certificate files, or programs that are already compiled.
+
+Every limitation above is pinned by an automated test (`test/unsupported.test.ts`), so it cannot change without anyone noticing.
+
+## How we know it is reliable
+
+- **Over 1,000 automated tests** run on every change. They cover every algorithm the tool recognises, code written in unusual styles, and the command-line behaviour.
+- **Names are checked against the real thing.** Every cipher, hash and key type the tool recognises is checked to exist in Node.js itself, and the login-token algorithm names are checked against the official internet standard (RFC 7518).
+- **Real projects.** During development the tool was run against seven well-known open-source projects (`jose`, `ssh2`, `node-jsonwebtoken`, `express`, `web-push`, `send` and `webcrypto`). Its results were compared with a separate text search of the same code. That comparison found and fixed real mistakes, for example a variable named `crypto` in one function hiding crypto calls in a different function of the same file.
+- **Every fixed bug becomes a permanent test** (see `test/fixtures/issues/`).
+
+Which algorithms count as risky is a judgement call. The tool's decisions are written openly in the `rules/` folder so you can read them and disagree with them.
+
+## For developers
+
+```sh
+npm test            # run all tests
+npm run typecheck   # check the TypeScript code for type errors
+```
+
+How the tests are organised:
+
+- `test/fixtures/resolve` and `test/fixtures/issues`: short real source files. A comment such as `// expect: RSA vulnerable` states what the tool must report on that line. A line without such a comment must produce no finding, so both missing and unexpected findings fail the test.
+- `test/rule-coverage.test.ts`: generates a call for every recognised function and algorithm, so no rule can be added without a test.
+- `test/no-duplicates.test.ts`: one call in the code must never be reported twice.
+- `test/integration.test.ts`: scans whole folders and runs the command-line tool, checking exit codes, `--json` output and error messages.
+
+To teach the tool a new library, add a rule file in `rules/`. Rule files are plain text in the YAML format and need no programming. The coverage tests then check the new rules automatically.
+
+## Licence
+
+Released under the [Apache License 2.0](LICENSE).
