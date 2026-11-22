@@ -1,6 +1,8 @@
-export type Status = 'vulnerable' | 'observed-resistant' | 'needs-review' | 'unresolved';
+export const STATUSES = ['vulnerable', 'observed-resistant', 'needs-review', 'unresolved'] as const;
+export type Status = (typeof STATUSES)[number];
 
-export type Category = 'keygen' | 'key-exchange' | 'encryption' | 'signature' | 'symmetric' | 'hash' | 'random' | 'unknown';
+export const CATEGORIES = ['keygen', 'key-exchange', 'encryption', 'signature', 'symmetric', 'hash', 'random', 'unknown'] as const;
+export type Category = (typeof CATEGORIES)[number];
 
 export interface TraceStep {
   note: string;

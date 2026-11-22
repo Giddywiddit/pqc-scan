@@ -22,13 +22,13 @@
 
 ## Why quantum computers matter
 
-RSA and elliptic-curve cryptography are safe today because breaking them with an ordinary computer would take longer than the age of the universe. In 1994 a mathematician named Peter Shor published a method (Shor's algorithm) that a quantum computer could use to break both in hours or days instead.
+RSA and elliptic-curve cryptography are safe today because breaking them with an ordinary computer would take longer than the age of the universe. In 1994 a mathematician named Peter Shor published a method (Shor's algorithm) that a quantum computer could use to break both in under a week instead (see below).
 
 How close is that?
 
-- Today's quantum computers are small. Google's Willow chip, announced in 2024, has 105 quantum bits (qubits), and they make errors often.
-- A 2025 research paper estimated that breaking a 2048-bit RSA key (the size most websites use) would take fewer than one million error-prone qubits running for about a week.
-- Nobody knows when a machine that big will exist. The US standards body NIST has published a draft plan to stop allowing RSA and elliptic-curve keys after 2035.
+- Today's quantum computers are small. Google's [Willow chip](https://blog.google/technology/research/google-willow-quantum-chip/), announced in December 2024, has 105 quantum bits (qubits), and its qubits make errors.
+- A [2025 research paper](https://arxiv.org/abs/2505.15917) by Craig Gidney of Google estimated that breaking a 2048-bit RSA key (a size still in common use) would take fewer than one million error-prone qubits running for under a week, assuming each operation fails about 1 time in 1,000.
+- Nobody knows when a machine that big will exist. The US standards body NIST has published its [final transition plan (IR 8547, October 2026)](https://csrc.nist.gov/pubs/ir/8547/final): RSA and elliptic-curve public-key methods are to be deprecated after 2030 and disallowed after 2035. The exact dates depend on the key size, so check the report for your case.
 
 NIST has already published replacements that are believed to resist quantum computers: ML-KEM (for agreeing on secret keys), and ML-DSA and SLH-DSA (for digital signatures). Switching takes years, so the first step is to find where you use the old methods. That list is what this tool produces.
 
@@ -63,8 +63,25 @@ Options:
 
 | Option | What it does |
 |---|---|
-| `--json` | Prints the results as structured data that other programs can read. The cat is left out so the output stays clean. |
+| `--json` | Prints the results as structured data that other programs can read (see "Using the results in other programs" below). The cat is left out so the output stays clean. |
 | `--quiet` | Hides the cat banner |
+
+## Using the results in other programs
+
+`--json` prints one JSON document (JSON is a text format that almost every programming language can read):
+
+```json
+{
+  "schemaVersion": 1,
+  "tool": { "name": "pqc-scan", "version": "0.1.0" },
+  "summary": { "total": 2, "vulnerable": 1, "observed-resistant": 1, "needs-review": 0, "unresolved": 0 },
+  "findings": [
+    { "ruleId": "node-keygen", "file": "keys.js", "line": 3, "algorithm": "RSA", "category": "keygen", "status": "vulnerable", "note": "…", "trace": [] }
+  ]
+}
+```
+
+The format is described by a JSON Schema file, [`schema/report-v1.schema.json`](schema/report-v1.schema.json), and `schemaVersion` changes only when a change could break a program that reads it. The tests check that the real output always matches the schema.
 
 ## What the labels mean
 
@@ -119,9 +136,15 @@ How the tests are organised:
 - `test/fixtures/resolve` and `test/fixtures/issues`: short real source files. A comment such as `// expect: RSA vulnerable` states what the tool must report on that line. A line without such a comment must produce no finding, so both missing and unexpected findings fail the test.
 - `test/rule-coverage.test.ts`: generates a call for every recognised function and algorithm, so no rule can be added without a test.
 - `test/no-duplicates.test.ts`: one call in the code must never be reported twice.
+- `test/language-adapter.test.ts`: proves the shared core works with a made-up second language that has no JavaScript code in it.
+- `test/report-schema.test.ts`: the `--json` output must match the published schema, and the schema must match the code.
 - `test/integration.test.ts`: scans whole folders and runs the command-line tool, checking exit codes, `--json` output and error messages.
 
-To teach the tool a new library, add a rule file in `rules/`. Rule files are plain text in the YAML format and need no programming. The coverage tests then check the new rules automatically.
+To teach the tool a new library, add a rule file in `rules/javascript/`. Rule files are plain text in the YAML format and need no programming. The coverage tests then check the new rules automatically.
+
+### Adding a language
+
+The code is split into a shared core (`src/core/`: walking folders, matching rules, cross-file checks) and one adapter per language (`src/languages/<name>/`). An adapter does one job: read one file and list its cryptography findings. Rules for that language go in `rules/<name>/`. Register the adapter in `src/languages/index.ts` and the core, the output formats and the tests of the shared behaviour work with it unchanged.
 
 ## Licence
 

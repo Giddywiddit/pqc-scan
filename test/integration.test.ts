@@ -94,13 +94,13 @@ describe('CLI contract', () => {
   it('exits 1 and emits JSON findings for vulnerable code', () => {
     const result = cli(fixture('cli-vulnerable'), '--json');
     expect(result.status).toBe(1);
-    expect(JSON.parse(result.stdout)).toMatchObject([{ algorithm: 'RSA', status: 'vulnerable' }]);
+    expect(JSON.parse(result.stdout).findings).toMatchObject([{ algorithm: 'RSA', status: 'vulnerable' }]);
   });
 
   it('exits 0 when only observed-resistant findings exist', () => {
     const result = cli(fixture('cli-observed'), '--json');
     expect(result.status).toBe(0);
-    expect(JSON.parse(result.stdout)).toMatchObject([{ status: 'observed-resistant' }]);
+    expect(JSON.parse(result.stdout).findings).toMatchObject([{ status: 'observed-resistant' }]);
   });
 
   it('prints the cat banner, a readable table and a verdict by default', () => {
@@ -114,7 +114,7 @@ describe('CLI contract', () => {
 
   it('keeps --json output free of the banner so it can be piped', () => {
     const result = cli(fixture('cli-vulnerable'), '--json');
-    expect(result.stdout.trimStart().startsWith('[')).toBe(true);
+    expect(result.stdout.trimStart().startsWith('{')).toBe(true);
     expect(result.stdout).not.toMatch(/pqc-scan •/);
   });
 

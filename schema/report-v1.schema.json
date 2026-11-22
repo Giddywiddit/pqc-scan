@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Giddywiddit/pqc-scan/schema/report-v1.schema.json",
+  "title": "pqc-scan report, version 1",
+  "description": "The output of `pqc-scan --json`. The version number changes only when the shape changes in a way that could break a program reading it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tool", "summary", "findings"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": { "name": { "const": "pqc-scan" }, "version": { "type": "string" } }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "vulnerable", "observed-resistant", "needs-review", "unresolved"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "vulnerable": { "type": "integer", "minimum": 0 },
+        "observed-resistant": { "type": "integer", "minimum": 0 },
+        "needs-review": { "type": "integer", "minimum": 0 },
+        "unresolved": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } }
+  },
+  "definitions": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "file", "line", "algorithm", "category", "status", "trace"],
+      "properties": {
+        "ruleId": { "type": "string", "description": "Which rule produced this finding." },
+        "file": { "type": "string", "description": "Path relative to the scanned folder (or the file name for a single file)." },
+        "line": { "type": "integer", "minimum": 1 },
+        "algorithm": { "type": ["string", "null"], "description": "The algorithm found, or null when it could not be determined." },
+        "category": { "enum": ["keygen", "key-exchange", "encryption", "signature", "symmetric", "hash", "random", "unknown"] },
+        "status": { "enum": ["vulnerable", "observed-resistant", "needs-review", "unresolved"] },
+        "note": { "type": "string", "description": "A plain-language explanation." },
+        "trace": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["note"], "properties": { "note": { "type": "string" } } } }
+      }
+    }
+  }
+}
