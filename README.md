@@ -3,12 +3,12 @@
 ```
  /\_/\
 ( 0.1 )    [ pqc-scan • Post-Quantum Cryptography Scanner ]
- > ^ <     Finds the cryptography in your JavaScript and TypeScript
+ > ^ <     Finds the cryptography in your JavaScript, TypeScript and C
            ---------------------------------------------------------
            Looks for what quantum computers will break (NIST FIPS 203/204/205)
 ```
 
-**pqc-scan reads your JavaScript or TypeScript code and lists every place it uses cryptography, then tells you which of those uses a future quantum computer could break.**
+**pqc-scan reads your JavaScript, TypeScript or C code and lists every place it uses cryptography, then tells you which of those uses a future quantum computer could break.**
 
 *Cryptography* is the mathematics that keeps data secret (encryption), proves who sent something (digital signatures) and fingerprints data (hashing). Every time your code calls one of these, it names a specific method, called an *algorithm*, such as RSA or SHA-256. This tool finds those calls and tells you which algorithm each one uses.
 
@@ -34,7 +34,7 @@ NIST has already published replacements that are believed to resist quantum comp
 
 ## Try it
 
-You need [Node.js](https://nodejs.org) version 22 or newer (Node.js runs JavaScript outside a browser).
+You need [Node.js](https://nodejs.org) version 22 or newer (Node.js runs JavaScript outside a browser). `npm install` downloads about 90 MB: 23 MB is TypeScript (used to read JavaScript and TypeScript files), 13 MB is the C parser, and most of the rest is the tools that run the tests.
 
 ```sh
 git clone https://github.com/Giddywiddit/pqc-scan.git
@@ -96,11 +96,15 @@ The tool exits with status 0 (the "success" signal that automated checks look fo
 
 ## What it understands
 
-- **Languages:** JavaScript and TypeScript files (`.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, `.cts`).
-- **Cryptography libraries:**
+- **Languages:** JavaScript and TypeScript files (`.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, `.cts`), and C files (`.c`, `.h`).
+- **Cryptography libraries for JavaScript and TypeScript:**
   - Node.js's built-in `crypto` module.
   - WebCrypto (`crypto.subtle`), the cryptography toolkit built into web browsers and also available in Node.js.
   - The `jsonwebtoken` and `jws` packages, which create and check login tokens.
+- **Cryptography libraries for C:**
+  - OpenSSL, the most widely used cryptography library, both the older style (`RSA_generate_key_ex`, `SHA256`) and the OpenSSL 3 style where the algorithm is a name (`EVP_PKEY_Q_keygen(..., "ML-KEM-768")`).
+  - libsodium, including its post-quantum ML-KEM-768 and X-Wing functions.
+  - Every function and algorithm name in the C rules was checked against the real OpenSSL and libsodium header files.
 - **Ways of writing the code:** renamed imports (`import { createHash as h } from 'crypto'`), the algorithm stored in a constant (`const name = 'sha256'`), `require('crypto')`, and a function copied into another variable before it is called.
 
 ## What it cannot see
@@ -108,10 +112,12 @@ The tool exits with status 0 (the "success" signal that automated checks look fo
 The tool reads code without running it. That means it has blind spots. Read this list before trusting a result.
 
 - **A clean result does not mean "no cryptography".** The tool misses cryptography that is reached in a way it cannot follow: loading a library whose name is built while the program runs (`require(someVariable)`), running text as code (`eval`), or hiding the call behind more than one level of helper files.
-- **Other languages are not covered.** Python, Java, Go, C# and C/C++ are not scanned yet. More languages are planned.
-- **Other cryptography libraries are not covered.** Only the libraries listed above. Cryptography built into a package you installed is not scanned unless you scan that package's own code.
+- **Other languages are not covered.** C++, Go, Rust, Python, Java and C# are not scanned yet. More languages are planned.
+- **Other cryptography libraries are not covered.** Only the libraries listed above. In C that leaves out Mbed TLS, wolfSSL, GnuTLS and the Windows cryptography functions (`BCrypt...`), for example; curl alone makes about 300 calls to those. Libraries that copy OpenSSL's function names (BoringSSL, LibreSSL, AWS-LC) are matched as OpenSSL. Cryptography built into a package you installed is not scanned unless you scan that package's own code.
 - **Code split across files is only partly followed.** If a helper file takes the algorithm as an argument, each file that imports the helper gets an ⚠️ note saying so. The tool does not trace which value each caller passes.
-- **It does not inspect** the encryption settings of a web server (TLS), certificate files, or programs that are already compiled.
+- **In C, a crypto call inside a `#define` macro is reported on the line where the macro is defined**, even if the macro is never used. The tool also reads both sides of every `#if`, because it cannot know which one your build uses.
+- **In C, calls through a function pointer** (`table->hash(data)`) and cryptography a project implements itself under its own function names are not recognised.
+- **It does not inspect** the encryption settings of a web server (TLS), certificate files, or programs that are already compiled. For C, it flags where TLS is set up so you can check the settings yourself.
 
 Every limitation above is pinned by an automated test (`test/unsupported.test.ts`), so it cannot change without anyone noticing.
 
@@ -119,7 +125,7 @@ Every limitation above is pinned by an automated test (`test/unsupported.test.ts
 
 - **Over 1,000 automated tests** run on every change. They cover every algorithm the tool recognises, code written in unusual styles, and the command-line behaviour.
 - **Names are checked against the real thing.** Every cipher, hash and key type the tool recognises is checked to exist in Node.js itself, and the login-token algorithm names are checked against the official internet standard (RFC 7518).
-- **Real projects.** During development the tool was run against seven well-known open-source projects (`jose`, `ssh2`, `node-jsonwebtoken`, `express`, `web-push`, `send` and `webcrypto`). Its results were compared with a separate text search of the same code. That comparison found and fixed real mistakes, for example a variable named `crypto` in one function hiding crypto calls in a different function of the same file.
+- **Real projects.** During development the tool was run against well-known open-source projects: seven in JavaScript (`jose`, `ssh2`, `node-jsonwebtoken`, `express`, `web-push`, `send` and `webcrypto`) and three in C (`curl`, `nginx` and `OpenSSH`). In the C projects it found every call to an OpenSSL or libsodium function it knows. Its results were compared with a separate text search of the same code. That comparison found and fixed real mistakes, for example a variable named `crypto` in one function hiding crypto calls in a different function of the same file.
 - **Every fixed bug becomes a permanent test** (see `test/fixtures/issues/`).
 
 Which algorithms count as risky is a judgement call. The tool's decisions are written openly in the `rules/` folder so you can read them and disagree with them.
@@ -133,14 +139,14 @@ npm run typecheck   # check the TypeScript code for type errors
 
 How the tests are organised:
 
-- `test/fixtures/resolve` and `test/fixtures/issues`: short real source files. A comment such as `// expect: RSA vulnerable` states what the tool must report on that line. A line without such a comment must produce no finding, so both missing and unexpected findings fail the test.
+- `test/fixtures/resolve`, `test/fixtures/issues` and `test/fixtures/c`: short real source files. A comment such as `// expect: RSA vulnerable` states what the tool must report on that line. A line without such a comment must produce no finding, so both missing and unexpected findings fail the test.
 - `test/rule-coverage.test.ts`: generates a call for every recognised function and algorithm, so no rule can be added without a test.
 - `test/no-duplicates.test.ts`: one call in the code must never be reported twice.
 - `test/language-adapter.test.ts`: proves the shared core works with a made-up second language that has no JavaScript code in it.
 - `test/report-schema.test.ts`: the `--json` output must match the published schema, and the schema must match the code.
 - `test/integration.test.ts`: scans whole folders and runs the command-line tool, checking exit codes, `--json` output and error messages.
 
-To teach the tool a new library, add a rule file in `rules/javascript/`. Rule files are plain text in the YAML format and need no programming. The coverage tests then check the new rules automatically.
+To teach the tool a new library, add a rule file in `rules/<language>/` (for example `rules/c/`). Rule files are plain text in the YAML format and need no programming. The coverage tests then check the new rules automatically.
 
 ### Adding a language
 

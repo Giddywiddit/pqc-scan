@@ -23,7 +23,7 @@ const toy: LanguageAdapter = {
       const match = /^hash (\w+)/.exec(line);
       if (!match) return [];
       return match[1] === 'dynamic'
-        ? [finding(file, index + 1, 'toy-hash', 'hash', null, 'unresolved', 'Algorithm could not be statically resolved.')]
+        ? [finding(file, index + 1, 'toy-hash', 'hash', null, 'unresolved', 'The algorithm comes from a value the tool cannot read here, such as a variable or a setting; check this line by hand.')]
         : [finding(file, index + 1, 'toy-hash', 'hash', match[1].toUpperCase(), 'observed-resistant')];
     });
   },
@@ -75,7 +75,7 @@ describe('adding a language needs only an adapter and a rules folder', () => {
     expect(loadRules(pathToFileURL(dir + '/')).map((group) => group.language)).toEqual(['javascript', 'python']);
   });
 
-  it('loads the bundled rules under the javascript language only', () => {
-    expect(new Set(loadRules().map((group) => group.language))).toEqual(new Set(['javascript']));
+  it('loads every bundled rule file under the language of its folder', () => {
+    expect(new Set(loadRules().map((group) => group.language))).toEqual(new Set(['javascript', 'c']));
   });
 });

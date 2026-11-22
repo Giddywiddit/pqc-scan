@@ -1,0 +1,350 @@
+module: [openssl]
+rules:
+  - id: openssl-sha256
+    functions: [EVP_sha256, SHA256, SHA256_Init]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: openssl-sha384
+    functions: [EVP_sha384, SHA384, SHA384_Init]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: openssl-sha512
+    functions: [EVP_sha512, SHA512, SHA512_Init]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: openssl-sha3-256
+    functions: [EVP_sha3_256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: openssl-sha3-384
+    functions: [EVP_sha3_384]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: openssl-sha3-512
+    functions: [EVP_sha3_512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: openssl-shake256
+    functions: [EVP_shake256]
+    category: hash
+    algorithm: SHAKE256
+    status: observed-resistant
+  - id: openssl-sha224
+    functions: [EVP_sha224, SHA224, SHA224_Init]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: openssl-shake128
+    functions: [EVP_shake128]
+    category: hash
+    algorithm: SHAKE128
+    status: needs-review
+    note: "128-bit security level; a quantum computer reduces its margin. Review migration policy."
+  - id: openssl-sha1
+    functions: [EVP_sha1, SHA1, SHA1_Init]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: openssl-md5
+    functions: [EVP_md5, MD5, MD5_Init, EVP_md5_sha1]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: openssl-aes-256
+    functions: [EVP_aes_256_gcm, EVP_aes_256_cbc, EVP_aes_256_ctr, EVP_aes_256_ccm, EVP_aes_256_xts, EVP_aes_256_ocb]
+    category: symmetric
+    algorithm: AES-256
+    status: observed-resistant
+  - id: openssl-aes-192
+    functions: [EVP_aes_192_gcm, EVP_aes_192_cbc, EVP_aes_192_ctr]
+    category: symmetric
+    algorithm: AES-192
+    status: observed-resistant
+  - id: openssl-aes-128
+    functions: [EVP_aes_128_gcm, EVP_aes_128_cbc, EVP_aes_128_ctr, EVP_aes_128_ccm, EVP_aes_128_ecb]
+    category: symmetric
+    algorithm: AES-128
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-aes-ecb
+    functions: [EVP_aes_256_ecb]
+    category: symmetric
+    algorithm: AES-256-ECB
+    status: needs-review
+    note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM."
+  - id: openssl-chacha20
+    functions: [EVP_chacha20_poly1305]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: openssl-3des
+    functions: [EVP_des_ede3_cbc]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: openssl-rc4
+    functions: [EVP_rc4]
+    category: symmetric
+    algorithm: RC4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: openssl-rsa-keygen
+    functions: [RSA_generate_key_ex, RSA_generate_key, RSA_generate_multi_prime_key]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rsa-encrypt
+    functions: [RSA_public_encrypt, RSA_private_decrypt, RSA_private_encrypt, RSA_public_decrypt]
+    category: encryption
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rsa-sign
+    functions: [RSA_sign, RSA_verify]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-ec-keygen
+    functions: [EC_KEY_generate_key]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-ecdsa
+    functions: [ECDSA_sign, ECDSA_verify, ECDSA_do_sign, ECDSA_do_verify]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-ecdh
+    functions: [ECDH_compute_key]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-dh
+    functions: [DH_generate_key, DH_compute_key, DH_generate_parameters_ex]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-dsa
+    functions: [DSA_generate_key, DSA_sign, DSA_verify, DSA_do_sign, DSA_do_verify]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-random
+    functions: [RAND_bytes, RAND_priv_bytes]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
+  - id: openssl-weak-random
+    functions: [RAND_pseudo_bytes]
+    category: random
+    algorithm: RAND_pseudo_bytes
+    status: needs-review
+    note: "Not guaranteed to be cryptographically strong; use RAND_bytes."
+  - id: openssl-pkey-operation
+    functions: [EVP_PKEY_sign, EVP_PKEY_verify, EVP_PKEY_derive, EVP_PKEY_encrypt, EVP_PKEY_decrypt, EVP_DigestSignInit, EVP_DigestVerifyInit, EVP_PKEY_encapsulate, EVP_PKEY_decapsulate]
+    category: unknown
+    status: unresolved
+    note: "Asymmetric operation; the key type is set where the key is created or loaded, which may be elsewhere."
+  - id: openssl-key-material
+    functions: [PEM_read_bio_PrivateKey, PEM_read_PrivateKey, PEM_read_bio_PUBKEY, d2i_PrivateKey, d2i_AutoPrivateKey, d2i_PUBKEY, SSL_CTX_use_PrivateKey_file, SSL_CTX_use_PrivateKey, SSL_CTX_use_certificate_file, SSL_CTX_use_certificate_chain_file, SSL_use_PrivateKey_file]
+    category: keygen
+    status: unresolved
+    note: "Key type depends on the key or certificate loaded at run time; review."
+  - id: openssl-tls-context
+    functions: [SSL_CTX_new, SSL_CTX_new_ex]
+    category: key-exchange
+    status: unresolved
+    note: "TLS key exchange: OpenSSL 3.5 and later prefer the hybrid post-quantum group X25519MLKEM768 by default; earlier versions use classical groups only. Check the OpenSSL version and any configured groups."
+  - id: openssl-tls-groups
+    functions: [SSL_CTX_set1_groups_list, SSL_set1_groups_list, SSL_CTX_set1_groups, SSL_set1_groups, SSL_CTX_set1_curves_list]
+    category: key-exchange
+    status: unresolved
+    note: "Configures TLS key-exchange groups; check the list includes a post-quantum group such as X25519MLKEM768."
+  - id: openssl-pkey-ctx-id
+    functions: [EVP_PKEY_CTX_new_id, EVP_PKEY_new_raw_private_key, EVP_PKEY_new_raw_public_key]
+    category: keygen
+    algorithmFrom: { arg: 0 }
+    values: &pkey
+      "evp_pkey_rsa": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_rsa_pss": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_ec": { algorithm: EC, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_dh": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_dhx": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_dsa": { algorithm: DSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_ed25519": { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_ed448": { algorithm: Ed448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_x25519": { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_x448": { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_sm2": { algorithm: SM2, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "evp_pkey_hmac": { algorithm: HMAC, status: unresolved, note: "Hash function is not resolved; review." }
+      "evp_pkey_hkdf": { algorithm: HKDF, status: unresolved, note: "Hash function is not resolved; review." }
+      "rsa": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "rsa-pss": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ec": { algorithm: EC, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "dh": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "dhx": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "dsa": { algorithm: DSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ed25519": { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ed448": { algorithm: Ed448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "x25519": { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "x448": { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "sm2": { algorithm: SM2, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ml-kem-512": { algorithm: ML-KEM-512, status: observed-resistant }
+      "ml-kem-768": { algorithm: ML-KEM-768, status: observed-resistant }
+      "ml-kem-1024": { algorithm: ML-KEM-1024, status: observed-resistant }
+      "ml-dsa-44": { algorithm: ML-DSA-44, status: observed-resistant }
+      "ml-dsa-65": { algorithm: ML-DSA-65, status: observed-resistant }
+      "ml-dsa-87": { algorithm: ML-DSA-87, status: observed-resistant }
+      "slh-dsa-sha2-128s": { algorithm: SLH-DSA-SHA2-128s, status: observed-resistant }
+      "slh-dsa-sha2-128f": { algorithm: SLH-DSA-SHA2-128f, status: observed-resistant }
+      "slh-dsa-sha2-192s": { algorithm: SLH-DSA-SHA2-192s, status: observed-resistant }
+      "slh-dsa-sha2-192f": { algorithm: SLH-DSA-SHA2-192f, status: observed-resistant }
+      "slh-dsa-sha2-256s": { algorithm: SLH-DSA-SHA2-256s, status: observed-resistant }
+      "slh-dsa-sha2-256f": { algorithm: SLH-DSA-SHA2-256f, status: observed-resistant }
+      "slh-dsa-shake-128s": { algorithm: SLH-DSA-SHAKE-128s, status: observed-resistant }
+      "slh-dsa-shake-128f": { algorithm: SLH-DSA-SHAKE-128f, status: observed-resistant }
+      "slh-dsa-shake-192s": { algorithm: SLH-DSA-SHAKE-192s, status: observed-resistant }
+      "slh-dsa-shake-192f": { algorithm: SLH-DSA-SHAKE-192f, status: observed-resistant }
+      "slh-dsa-shake-256s": { algorithm: SLH-DSA-SHAKE-256s, status: observed-resistant }
+      "slh-dsa-shake-256f": { algorithm: SLH-DSA-SHAKE-256f, status: observed-resistant }
+  - id: openssl-pkey-ctx-name
+    functions: [EVP_PKEY_CTX_new_from_name]
+    category: keygen
+    algorithmFrom: { arg: 1 }
+    values: *pkey
+  - id: openssl-pkey-quick-keygen
+    functions: [EVP_PKEY_Q_keygen]
+    category: keygen
+    algorithmFrom: { arg: 2 }
+    values: *pkey
+  - id: openssl-ec-curve
+    functions: [EC_KEY_new_by_curve_name, EC_GROUP_new_by_curve_name]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+    note: "Every curve these functions accept is a classical elliptic curve. A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-digest-by-name
+    functions: [EVP_get_digestbyname, EVP_get_digestbynid]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values: &digests
+      "sha256": { algorithm: SHA-256, status: observed-resistant }
+      "sha-256": { algorithm: SHA-256, status: observed-resistant }
+      "sha2-256": { algorithm: SHA-256, status: observed-resistant }
+      "sha384": { algorithm: SHA-384, status: observed-resistant }
+      "sha-384": { algorithm: SHA-384, status: observed-resistant }
+      "sha512": { algorithm: SHA-512, status: observed-resistant }
+      "sha-512": { algorithm: SHA-512, status: observed-resistant }
+      "sha3-256": { algorithm: SHA3-256, status: observed-resistant }
+      "sha3-384": { algorithm: SHA3-384, status: observed-resistant }
+      "sha3-512": { algorithm: SHA3-512, status: observed-resistant }
+      "sha1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "sha-1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "sha224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha-224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "nid_sha256": { algorithm: SHA-256, status: observed-resistant }
+      "nid_sha384": { algorithm: SHA-384, status: observed-resistant }
+      "nid_sha512": { algorithm: SHA-512, status: observed-resistant }
+      "nid_sha3_256": { algorithm: SHA3-256, status: observed-resistant }
+      "nid_sha3_512": { algorithm: SHA3-512, status: observed-resistant }
+      "nid_sha1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "nid_md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "evp_sha256": { algorithm: SHA-256, status: observed-resistant }
+      "evp_sha384": { algorithm: SHA-384, status: observed-resistant }
+      "evp_sha512": { algorithm: SHA-512, status: observed-resistant }
+      "evp_sha3_256": { algorithm: SHA3-256, status: observed-resistant }
+      "evp_sha3_512": { algorithm: SHA3-512, status: observed-resistant }
+      "evp_sha1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "evp_md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "evp_sha224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+  - id: openssl-digest-fetch
+    functions: [EVP_MD_fetch]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *digests
+  - id: openssl-hmac
+    functions: [HMAC]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values: &hmac
+      "sha256": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "sha-256": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "sha2-256": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "sha384": { algorithm: HMAC-SHA-384, status: observed-resistant }
+      "sha-384": { algorithm: HMAC-SHA-384, status: observed-resistant }
+      "sha512": { algorithm: HMAC-SHA-512, status: observed-resistant }
+      "sha-512": { algorithm: HMAC-SHA-512, status: observed-resistant }
+      "sha3-256": { algorithm: HMAC-SHA3-256, status: observed-resistant }
+      "sha3-384": { algorithm: HMAC-SHA3-384, status: observed-resistant }
+      "sha3-512": { algorithm: HMAC-SHA3-512, status: observed-resistant }
+      "sha1": { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "sha-1": { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "md5": { algorithm: HMAC-MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "sha224": { algorithm: HMAC-SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha-224": { algorithm: HMAC-SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "nid_sha256": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "nid_sha384": { algorithm: HMAC-SHA-384, status: observed-resistant }
+      "nid_sha512": { algorithm: HMAC-SHA-512, status: observed-resistant }
+      "nid_sha3_256": { algorithm: HMAC-SHA3-256, status: observed-resistant }
+      "nid_sha3_512": { algorithm: HMAC-SHA3-512, status: observed-resistant }
+      "nid_sha1": { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "nid_md5": { algorithm: HMAC-MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "evp_sha256": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "evp_sha384": { algorithm: HMAC-SHA-384, status: observed-resistant }
+      "evp_sha512": { algorithm: HMAC-SHA-512, status: observed-resistant }
+      "evp_sha3_256": { algorithm: HMAC-SHA3-256, status: observed-resistant }
+      "evp_sha3_512": { algorithm: HMAC-SHA3-512, status: observed-resistant }
+      "evp_sha1": { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "evp_md5": { algorithm: HMAC-MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "evp_sha224": { algorithm: HMAC-SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+  - id: openssl-hmac-init
+    functions: [HMAC_Init_ex]
+    category: hash
+    algorithmFrom: { arg: 3 }
+    values: *hmac
+  - id: openssl-cipher-by-name
+    functions: [EVP_get_cipherbyname]
+    category: symmetric
+    algorithmFrom: { arg: 0 }
+    values: &ciphers
+      "aes-256-gcm": { algorithm: AES-256-GCM, status: observed-resistant }
+      "aes-256-cbc": { algorithm: AES-256-CBC, status: observed-resistant }
+      "aes-256-ctr": { algorithm: AES-256-CTR, status: observed-resistant }
+      "aes-192-gcm": { algorithm: AES-192-GCM, status: observed-resistant }
+      "aes-192-cbc": { algorithm: AES-192-CBC, status: observed-resistant }
+      "aes-128-gcm": { algorithm: AES-128-GCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "aes-128-cbc": { algorithm: AES-128-CBC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "aes-128-ctr": { algorithm: AES-128-CTR, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "chacha20-poly1305": { algorithm: ChaCha20-Poly1305, status: observed-resistant }
+      "des-ede3-cbc": { algorithm: 3DES, status: needs-review, note: "Classically weak and deprecated; migrate." }
+  - id: openssl-cipher-fetch
+    functions: [EVP_CIPHER_fetch]
+    category: symmetric
+    algorithmFrom: { arg: 1 }
+    values: *ciphers
+  - id: openssl-aes-low-level
+    functions: [AES_set_encrypt_key, AES_set_decrypt_key]
+    category: symmetric
+    algorithmFrom: { arg: 1 }
+    values: &aesbits
+      "128": { algorithm: AES-128, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "192": { algorithm: AES-192, status: observed-resistant }
+      "256": { algorithm: AES-256, status: observed-resistant }

@@ -1,29 +1,41 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
-import { scanSource } from '../src/languages/javascript/adapter.ts';
+import { loadLanguages } from '../src/core/scan.ts';
+import { languages } from '../src/languages/index.ts';
 
 const groups = loadRules().filter((group) => group.rules.length > 0);
+const adapterFor = (language: string) => languages.find((adapter) => adapter.id === language)!;
+beforeAll(() => loadLanguages());
 
-interface Case { name: string; code: string; expected: { ruleId: string; algorithm: string | null; status: string }[] }
+interface Case { name: string; language: string; code: string; expected: { ruleId: string; algorithm: string | null; status: string }[] }
 
 const quote = (text: string) => JSON.stringify(text);
 const nested = (path: string, value: string): string => path.split('.').reduceRight((inner, key) => `{ ${key}: ${inner} }`, quote(value));
 
 // Every function and every algorithm value in every rule file is exercised by a synthesized call.
 const cases: Case[] = [];
+// How a call to `fn` is written in each language. C constants (EVP_PKEY_RSA, NID_sha256) are passed as bare names.
+const callIn: Record<string, (module: string, fn: string, args: string[]) => string> = {
+  javascript: (module, fn, args) => `import * as m from ${quote(module)};\nm.${fn}(${args.join(', ')});`,
+  c: (_module, fn, args) => `void f(void) { ${fn}(${args.join(', ')}); }`,
+};
+const valueIn: Record<string, (key: string) => string> = {
+  javascript: quote,
+  c: (key) => (/^(evp_|nid_)/.test(key) ? key.toUpperCase() : quote(key)),
+};
 for (const group of groups) {
-  const header = `import * as m from ${quote(group.module[0])};\n`;
+  const { language } = group;
   for (const rule of group.rules) {
     for (const fn of rule.functions) {
-      const call = (args: string[]) => `${header}m.${fn}(${args.join(', ')});`;
-      if (rule.ignore) cases.push({ name: `${rule.id}: ${fn} is ignored`, code: call([]), expected: [] });
-      else if (rule.algorithm) cases.push({ name: `${rule.id}: ${fn}`, code: call([]), expected: [{ ruleId: rule.id, algorithm: rule.algorithm, status: rule.status! }] });
-      else if (!rule.algorithmFrom) cases.push({ name: `${rule.id}: ${fn}`, code: call([]), expected: [{ ruleId: rule.id, algorithm: null, status: 'unresolved' }] });
+      const call = (args: string[]) => callIn[language](group.module[0], fn, args);
+      if (rule.ignore) cases.push({ name: `${rule.id}: ${fn} is ignored`, language, code: call([]), expected: [] });
+      else if (rule.algorithm) cases.push({ name: `${rule.id}: ${fn}`, language, code: call([]), expected: [{ ruleId: rule.id, algorithm: rule.algorithm, status: rule.status! }] });
+      else if (!rule.algorithmFrom) cases.push({ name: `${rule.id}: ${fn}`, language, code: call([]), expected: [{ ruleId: rule.id, algorithm: null, status: 'unresolved' }] });
       else {
         const { arg, property } = rule.algorithmFrom;
         for (const [key, value] of Object.entries(rule.values ?? {})) {
-          const args = [...Array(arg).fill('x'), property ? nested(property, key) : quote(key)];
-          cases.push({ name: `${rule.id}: ${fn}(${key})`, code: call(args), expected: [{ ruleId: rule.id, algorithm: value.algorithm, status: value.status }] });
+          const args = [...Array(arg).fill('x'), property ? nested(property, key) : valueIn[language](key)];
+          cases.push({ name: `${language} ${rule.id}: ${fn}(${key})`, language, code: call(args), expected: [{ ruleId: rule.id, algorithm: value.algorithm, status: value.status }] });
         }
       }
     }
@@ -31,7 +43,10 @@ for (const group of groups) {
 }
 
 describe('rule files', () => {
-  it('generates a non-trivial number of cases', () => expect(cases.length).toBeGreaterThan(200));
+  it('generates a non-trivial number of cases for every language with rules', () => {
+    expect(cases.length).toBeGreaterThan(200);
+    for (const language of new Set(groups.map((group) => group.language))) expect(cases.filter((item) => item.language === language).length, language).toBeGreaterThan(50);
+  });
 
   it('keeps rule ids unique across all rule files', () => {
     const ids = groups.flatMap((group) => group.rules.map((rule) => rule.id));
@@ -52,7 +67,8 @@ describe('rule files', () => {
   });
 
   it.each(cases.map((item) => [item.name, item] as const))('%s', (_name, item) => {
-    const findings = scanSource(item.code, 'f.ts', loadRules()).map(({ ruleId, algorithm, status }) => ({ ruleId, algorithm, status }));
+    const rules = loadRules().filter((group) => group.language === item.language);
+    const findings = adapterFor(item.language).scanSource(item.code, 'f', rules).map(({ ruleId, algorithm, status }) => ({ ruleId, algorithm, status }));
     expect(findings).toEqual(item.expected);
   });
 });

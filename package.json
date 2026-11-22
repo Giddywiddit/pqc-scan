@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Conservative post-quantum cryptography inventory for JavaScript and TypeScript",
+  "description": "Conservative post-quantum cryptography inventory for JavaScript, TypeScript and C",
   "scripts": {
     "scan": "tsx src/cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "tree-sitter-c": "0.24.1",
+    "web-tree-sitter": "0.27.2",
     "yaml": "^2.9.1"
   },
   "devDependencies": {

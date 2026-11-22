@@ -1,0 +1,87 @@
+module: [libsodium]
+rules:
+  - id: sodium-box
+    functions: [crypto_box_keypair, crypto_box_seed_keypair, crypto_box_easy, crypto_box_open_easy, crypto_box_detached, crypto_box_open_detached, crypto_box_seal, crypto_box_seal_open, crypto_box_beforenm]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: sodium-kx
+    functions: [crypto_kx_keypair, crypto_kx_seed_keypair, crypto_kx_client_session_keys, crypto_kx_server_session_keys]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: sodium-scalarmult
+    functions: [crypto_scalarmult, crypto_scalarmult_base, crypto_scalarmult_curve25519, crypto_scalarmult_curve25519_base]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: sodium-sign
+    functions: [crypto_sign_keypair, crypto_sign_seed_keypair, crypto_sign, crypto_sign_open, crypto_sign_detached, crypto_sign_verify_detached, crypto_sign_ed25519, crypto_sign_ed25519_open, crypto_sign_ed25519_keypair, crypto_sign_ed25519_seed_keypair, crypto_sign_ed25519_detached, crypto_sign_ed25519_verify_detached]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: sodium-secretbox
+    functions: [crypto_secretbox_easy, crypto_secretbox_open_easy, crypto_secretbox_detached, crypto_secretbox_open_detached]
+    category: symmetric
+    algorithm: XSalsa20-Poly1305
+    status: observed-resistant
+  - id: sodium-aead-xchacha
+    functions: [crypto_aead_xchacha20poly1305_ietf_encrypt, crypto_aead_xchacha20poly1305_ietf_decrypt, crypto_secretstream_xchacha20poly1305_init_push, crypto_secretstream_xchacha20poly1305_init_pull]
+    category: symmetric
+    algorithm: XChaCha20-Poly1305
+    status: observed-resistant
+  - id: sodium-aead-chacha
+    functions: [crypto_aead_chacha20poly1305_ietf_encrypt, crypto_aead_chacha20poly1305_ietf_decrypt]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: sodium-aead-aes
+    functions: [crypto_aead_aes256gcm_encrypt, crypto_aead_aes256gcm_decrypt]
+    category: symmetric
+    algorithm: AES-256-GCM
+    status: observed-resistant
+  - id: sodium-generichash
+    functions: [crypto_generichash, crypto_generichash_init]
+    category: hash
+    algorithm: BLAKE2b
+    status: observed-resistant
+  - id: sodium-sha256
+    functions: [crypto_hash_sha256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: sodium-sha512
+    functions: [crypto_hash_sha512]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: sodium-pwhash
+    functions: [crypto_pwhash, crypto_pwhash_str, crypto_pwhash_str_verify]
+    category: hash
+    algorithm: Argon2id
+    status: observed-resistant
+  - id: sodium-auth
+    functions: [crypto_auth, crypto_auth_verify]
+    category: hash
+    algorithm: HMAC-SHA-512-256
+    status: observed-resistant
+  - id: sodium-random
+    functions: [randombytes_buf, randombytes_random, randombytes_uniform]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
+  - id: sodium-kem-mlkem768
+    functions: [crypto_kem_mlkem768_keypair, crypto_kem_mlkem768_seed_keypair, crypto_kem_mlkem768_enc, crypto_kem_mlkem768_enc_deterministic, crypto_kem_mlkem768_dec]
+    category: key-exchange
+    algorithm: ML-KEM-768
+    status: observed-resistant
+  - id: sodium-kem-xwing
+    functions: [crypto_kem_xwing_keypair, crypto_kem_xwing_seed_keypair, crypto_kem_xwing_enc, crypto_kem_xwing_enc_deterministic, crypto_kem_xwing_dec, crypto_kem_keypair, crypto_kem_seed_keypair, crypto_kem_enc, crypto_kem_dec]
+    category: key-exchange
+    algorithm: X-Wing
+    status: observed-resistant
+    note: "X-Wing combines ML-KEM-768 with X25519; it stays secure if either part holds. libsodium's default crypto_kem is X-Wing."

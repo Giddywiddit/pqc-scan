@@ -14,6 +14,8 @@ export interface LanguageAdapter {
   id: string;
   /** File extensions this adapter reads, with the leading dot. */
   extensions: readonly string[];
+  /** Optional one-time async setup, such as loading a parser grammar. The core calls it before any scan. */
+  load?(): Promise<void>;
   /** Report every crypto use in one file. `file` is the name to put in findings. */
   scanSource(text: string, file: string, rules: ModuleRules[]): Finding[];
   /** Optional. Together these enable the cross-file wrapper report for this language. */

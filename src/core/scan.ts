@@ -8,6 +8,11 @@ import { languages } from '../languages/index.ts';
 
 interface ScannedFile { path: string; text: string; name: string; adapter: LanguageAdapter; findings: Finding[] }
 
+/** Runs each adapter's one-time setup. Call once before `scan`. */
+export async function loadLanguages(adapters: readonly LanguageAdapter[] = languages): Promise<void> {
+  await Promise.all(adapters.map((adapter) => adapter.load?.()));
+}
+
 /** Scan a file or folder with every registered language, giving each adapter only the rules for its own language. */
 export function scan(target: string, rules: ModuleRules[], adapters: readonly LanguageAdapter[] = languages): Finding[] {
   const root = statSync(target).isDirectory() ? target : undefined;

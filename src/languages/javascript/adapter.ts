@@ -1,6 +1,7 @@
 import { dirname, join, resolve } from 'node:path';
 import ts from 'typescript';
-import { ESCAPING_REFERENCE_RULE_ID, UNRESOLVED_ALGORITHM_NOTE, finding } from '../../core/finding.ts';
+import { ESCAPING_REFERENCE_RULE_ID, finding } from '../../core/finding.ts';
+import { ruleFindings } from '../../core/match.ts';
 import type { LanguageAdapter } from '../../core/language.ts';
 import type { Finding, ModuleRules } from '../../core/types.ts';
 
@@ -246,28 +247,15 @@ export function scanSource(text: string, file: string, rules: ModuleRules[]): Fi
           // A local function or unrelated package may share a crypto-like API name.
         } else if (!rule) {
           findings.push(finding(file, line, 'unhandled-crypto-api', 'unknown', null, 'unresolved', `Recognized crypto module call "${target.imported ?? 'unknown'}" has no rule.`, trace));
-        } else if (rule.ignore) {
-          // Operates on an existing key; the algorithm is reported where the key is created or imported.
-        } else if (rule.algorithm && rule.status) {
-          findings.push(finding(file, line, rule.id, rule.category, rule.algorithm, rule.status, undefined, trace));
-        } else if (!rule.algorithmFrom) {
-          findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', rule.note, trace));
         } else {
-          const argument = args[rule.algorithmFrom.arg];
-          const single = literal(argument, declarations);
-          const names = rule.algorithmFrom.property
-            ? propertyLiterals(argument, rule.algorithmFrom.property, declarations) ?? (single === null ? null : [single])
-            : single === null ? null : [single];
-          const values = rule.values ?? {};
-          const qualifiers = (rule.qualifiers ?? []).map((property) => propertyLiteral(argument, property, declarations)).filter((item): item is string => item !== null);
-          if (!names) findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', UNRESOLVED_ALGORITHM_NOTE, trace));
-          for (const value of names ?? []) {
-            const base = value.toLowerCase();
-            const key = [...qualifiers.map((item) => `${base}-${item.toLowerCase()}`), value, base].find((candidate) => Object.hasOwn(values, candidate));
-            const match = key === undefined ? undefined : values[key];
-            if (!match) findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', `Algorithm "${value}" has no rule.`, trace));
-            else findings.push(finding(file, line, rule.id, rule.category, match.algorithm, match.status, match.note, trace));
-          }
+          findings.push(...ruleFindings(rule, file, line, trace, () => {
+            const argument = args[rule.algorithmFrom!.arg];
+            const single = literal(argument, declarations);
+            const property = rule.algorithmFrom!.property;
+            const names = property ? propertyLiterals(argument, property, declarations) ?? (single === null ? null : [single]) : single === null ? null : [single];
+            const qualifiers = (rule.qualifiers ?? []).map((item) => propertyLiteral(argument, item, declarations)).filter((item): item is string => item !== null);
+            return { names, qualifiers };
+          }));
         }
       }
     }

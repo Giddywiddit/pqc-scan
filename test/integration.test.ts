@@ -131,6 +131,13 @@ describe('CLI contract', () => {
     expect(result.stdout).toMatch(/not a security conclusion/);
   });
 
+  it('scans C files end to end, loading the C parser before the scan', () => {
+    const result = cli(fixture('c'), '--json');
+    expect(result.status).toBe(1);
+    const files = new Set(JSON.parse(result.stdout).findings.map((item: { file: string }) => item.file));
+    expect(files).toEqual(new Set(['legacy-openssl.c', 'libsodium.c', 'nested-and-constants.c', 'openssl3-keygen.c', 'preprocessor.c', 'tls-and-keys.h']));
+  });
+
   it('fails clearly for a nonexistent path', () => {
     const result = cli(join(tmpdir(), 'pqc-does-not-exist'));
     expect(result.status).toBe(2);
