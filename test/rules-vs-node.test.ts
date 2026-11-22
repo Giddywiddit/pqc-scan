@@ -1,6 +1,6 @@
 import { generateKeyPairSync, getCiphers, getHashes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { loadRules } from '../src/rules.ts';
+import { loadRules } from '../src/core/rules.ts';
 
 // The rule-coverage test proves the scanner agrees with the rule files. This one checks the rule files against Node itself,
 // so a misspelt or invented algorithm name cannot hide behind a self-consistent table.

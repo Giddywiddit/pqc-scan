@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { loadRules } from '../src/rules.ts';
-import { scanSource } from '../src/scanner.ts';
+import { loadRules } from '../src/core/rules.ts';
+import { scanSource } from '../src/languages/javascript/adapter.ts';
 
 const rules = loadRules();
 const compact = (text: string) => scanSource(text, 'f.ts', rules).map(({ algorithm, status, ruleId, line }) => ({ algorithm, status, ruleId, line }));

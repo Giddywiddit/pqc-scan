@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadRules } from '../src/rules.ts';
-import { scanSource } from '../src/scanner.ts';
+import { loadRules } from '../src/core/rules.ts';
+import { scanSource } from '../src/languages/javascript/adapter.ts';
 
 // Each fixture marks expected findings inline: `// expect: <algorithm|-> <status>[, <algorithm|-> <status>]`.
 // Lines without a marker must produce no finding, so both missing and unexpected findings fail.

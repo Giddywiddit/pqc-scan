@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { loadRules } from './rules.ts';
-import { scan } from './scanner.ts';
-import type { Finding, Status } from './types.ts';
+import { loadRules } from './core/rules.ts';
+import { scan } from './core/scan.ts';
+import type { Finding, Status } from './core/types.ts';
 
 const ICONS: Record<Status, string> = { vulnerable: '❌', 'observed-resistant': '✅', 'needs-review': '🔍', unresolved: '⚠️ ' };
 

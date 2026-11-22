@@ -1,30 +1,15 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { basename, dirname, extname, join, relative, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import ts from 'typescript';
-import type { Finding, ModuleRules, Rule, Status } from './types.ts';
+import { ESCAPING_REFERENCE_RULE_ID, UNRESOLVED_ALGORITHM_NOTE, finding } from '../../core/finding.ts';
+import type { LanguageAdapter } from '../../core/language.ts';
+import type { Finding, ModuleRules } from '../../core/types.ts';
 
 interface Binding { module: string; imported?: string; }
 
 const globals = new Set(['globalThis', 'window', 'self']);
-const extensions = new Set(['.js', '.cjs', '.mjs', '.jsx', '.ts', '.cts', '.mts', '.tsx']);
 
 function moduleMatches(left: string, right: string): boolean {
   return left.replace(/^node:/, '') === right.replace(/^node:/, '');
-}
-
-function sourceFiles(target: string): string[] {
-  if (!statSync(target).isDirectory()) return extensions.has(extname(target)) ? [target] : [];
-  const found: string[] = [];
-  const walk = (directory: string): void => {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      if (['.git', 'dist', 'node_modules'].includes(entry.name)) continue;
-      const path = join(directory, entry.name);
-      if (entry.isDirectory()) walk(path);
-      else if (entry.isFile() && extensions.has(extname(entry.name))) found.push(path);
-    }
-  };
-  walk(target);
-  return found;
 }
 
 function literal(node: ts.Expression | undefined, declarations: Map<string, ts.VariableDeclaration | null>): string | null {
@@ -228,10 +213,6 @@ function findModuleRules(rules: ModuleRules[], target: Binding): ModuleRules | u
   return rules.find((group) => group.module.some((item) => moduleMatches(item, target.module)));
 }
 
-function finding(file: string, line: number, ruleId: string, category: Finding['category'], algorithm: string | null, status: Status, note?: string, trace: Finding['trace'] = []): Finding {
-  return { file, line, ruleId, category, algorithm, status, note, trace };
-}
-
 export function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[] {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const diagnostics = (source as ts.SourceFile & { parseDiagnostics: readonly ts.DiagnosticWithLocation[] }).parseDiagnostics;
@@ -279,7 +260,7 @@ export function scanSource(text: string, file: string, rules: ModuleRules[]): Fi
             : single === null ? null : [single];
           const values = rule.values ?? {};
           const qualifiers = (rule.qualifiers ?? []).map((property) => propertyLiteral(argument, property, declarations)).filter((item): item is string => item !== null);
-          if (!names) findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', 'Algorithm could not be statically resolved.', trace));
+          if (!names) findings.push(finding(file, line, rule.id, rule.category, null, 'unresolved', UNRESOLVED_ALGORITHM_NOTE, trace));
           for (const value of names ?? []) {
             const base = value.toLowerCase();
             const key = [...qualifiers.map((item) => `${base}-${item.toLowerCase()}`), value, base].find((candidate) => Object.hasOwn(values, candidate));
@@ -296,7 +277,7 @@ export function scanSource(text: string, file: string, rules: ModuleRules[]): Fi
       const known = target && moduleRules && (target.imported === undefined || moduleRules.rules.some((rule) => rule.functions.includes(target.imported!)));
       if (target && known) {
         const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
-        findings.push(finding(file, line, 'crypto-reference-escapes', 'unknown', null, 'unresolved', `Reference to ${target.imported ?? target.module} is stored or passed as a value; later calls cannot be tracked.`, [{ note: `resolved ${target.imported ?? 'module'} from ${target.module}` }]));
+        findings.push(finding(file, line, ESCAPING_REFERENCE_RULE_ID, 'unknown', null, 'unresolved', `Reference to ${target.imported ?? target.module} is stored or passed as a value; later calls cannot be tracked.`, [{ note: `resolved ${target.imported ?? 'module'} from ${target.module}` }]));
       }
     }
     ts.forEachChild(node, visit);
@@ -333,30 +314,10 @@ function resolveLocal(from: string, specifier: string, known: Set<string>): stri
   return candidates.find((candidate) => known.has(candidate));
 }
 
-export function scan(target: string, rules: ModuleRules[]): Finding[] {
-  const root = statSync(target).isDirectory() ? target : undefined;
-  const files = sourceFiles(target).map((path) => {
-    const text = readFileSync(path, 'utf8');
-    const name = root ? relative(root, path) : basename(path);
-    return { path, text, name, findings: scanSource(text, name, rules) };
-  });
-  if (root) {
-    // A module whose algorithm comes from a parameter (or that lets a crypto reference escape) is a wrapper: its importers
-    // may be choosing the algorithm, and that flow is not tracked across files.
-    const known = new Set(files.map((item) => item.path));
-    const isDynamic = (entry: Finding): boolean => entry.ruleId === 'crypto-reference-escapes' || entry.note === 'Algorithm could not be statically resolved.';
-    const bearing = new Map(files.map((item) => [item.path, item.findings.filter(isDynamic).length] as const).filter(([, count]) => count > 0));
-    for (const item of files) {
-      const reported = new Set<string>();
-      for (const { specifier, line } of localImports(item.text, item.name)) {
-        const resolved = resolveLocal(item.path, specifier, known);
-        if (!resolved || resolved === item.path || !bearing.has(resolved) || reported.has(resolved)) continue;
-        reported.add(resolved);
-        item.findings.push(finding(item.name, line, 'crypto-via-local-module', 'unknown', null, 'unresolved',
-          `Imports ${specifier}, which has ${bearing.get(resolved)} crypto call(s) whose algorithm is decided by its callers; that flow is not tracked across files.`));
-      }
-      item.findings.sort((left, right) => left.line - right.line);
-    }
-  }
-  return files.flatMap((item) => item.findings);
-}
+export const javascript: LanguageAdapter = {
+  id: 'javascript',
+  extensions: ['.js', '.cjs', '.mjs', '.jsx', '.ts', '.cts', '.mts', '.tsx'],
+  scanSource,
+  localImports,
+  resolveImport: resolveLocal,
+};

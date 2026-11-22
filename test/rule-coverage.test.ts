@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { loadRules } from '../src/rules.ts';
-import { scanSource } from '../src/scanner.ts';
+import { loadRules } from '../src/core/rules.ts';
+import { scanSource } from '../src/languages/javascript/adapter.ts';
 
 const groups = loadRules().filter((group) => group.rules.length > 0);
 

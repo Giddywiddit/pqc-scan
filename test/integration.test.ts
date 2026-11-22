@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadRules } from '../src/rules.ts';
-import { scan } from '../src/scanner.ts';
+import { loadRules } from '../src/core/rules.ts';
+import { scan } from '../src/core/scan.ts';
 
 const root = new URL('..', import.meta.url).pathname;
 const fixture = (name: string) => join(root, 'test/fixtures', name);
@@ -67,7 +67,8 @@ describe('filesystem scanning', () => {
 describe('rule loading', () => {
   const load = (yaml: string) => {
     const dir = mkdtempSync(join(tmpdir(), 'pqc-rules-'));
-    writeFileSync(join(dir, 'bad.yaml'), yaml);
+    mkdirSync(join(dir, 'javascript'));
+    writeFileSync(join(dir, 'javascript', 'bad.yaml'), yaml);
     return () => loadRules(pathToFileURL(dir + '/'));
   };
 

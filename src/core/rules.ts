@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import type { ModuleRules } from './types.ts';
 
-function validateRules(value: unknown, file: string): asserts value is ModuleRules {
+function validateRules(value: unknown, file: string): asserts value is Omit<ModuleRules, 'language'> {
   if (!value || typeof value !== 'object') throw new Error(`${file}: rule file must contain an object.`);
   const ruleset = value as Partial<ModuleRules>;
   if (!Array.isArray(ruleset.module) || ruleset.module.length === 0 || ruleset.module.some((name) => typeof name !== 'string')) {
@@ -25,14 +25,18 @@ function validateRules(value: unknown, file: string): asserts value is ModuleRul
   }
 }
 
-export function loadRules(rulesDir = new URL('../rules/', import.meta.url)): ModuleRules[] {
-  const directory = rulesDir instanceof URL ? rulesDir : new URL(rulesDir, import.meta.url);
-  return readdirSync(directory)
-    .filter((name) => name.endsWith('.yaml'))
-    .sort()
-    .map((name) => {
-      const value = parse(readFileSync(join(directory.pathname, name), 'utf8'));
-      validateRules(value, name);
-      return value;
-    });
+/** Reads every `<rulesDir>/<language>/*.yaml`; the folder name becomes the rule file's language. */
+export function loadRules(rulesDir = new URL('../../rules/', import.meta.url)): ModuleRules[] {
+  const root = rulesDir instanceof URL ? rulesDir : new URL(rulesDir, import.meta.url);
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .flatMap((folder) => readdirSync(new URL(`${folder.name}/`, root))
+      .filter((name) => name.endsWith('.yaml'))
+      .sort()
+      .map((name) => {
+        const value = parse(readFileSync(join(new URL(`${folder.name}/`, root).pathname, name), 'utf8'));
+        validateRules(value, `${folder.name}/${name}`);
+        return { ...value, language: folder.name };
+      }));
 }

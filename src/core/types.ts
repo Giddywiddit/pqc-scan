@@ -37,6 +37,8 @@ export interface Rule {
 }
 
 export interface ModuleRules {
+  /** Set by the loader from the rules/<language>/ folder the file lives in. */
+  language: string;
   module: string[];
   rules: Rule[];
   /** Constructors whose instances are WebCrypto objects (`new Crypto()` from a polyfill). */
