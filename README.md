@@ -1,4 +1,4 @@
-# pqc-scan 🐱
+# pqc-scan 
 
 ```
  /\_/\
