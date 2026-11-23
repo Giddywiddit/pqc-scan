@@ -1,21 +1,32 @@
 #!/usr/bin/env node
 import { existsSync } from 'node:fs';
+import { parseArgs } from 'node:util';
 import { resolve } from 'node:path';
 import { loadRules } from './core/rules.ts';
+import { ResultCache } from './core/cache.ts';
 import { scanInParallel } from './core/parallel.ts';
 import { loadLanguages } from './core/scan.ts';
 import { toReport } from './output/json.ts';
 import { MASCOT_BANNER, printTable } from './output/text.ts';
 
-const args = process.argv.slice(2);
-const json = args.includes('--json');
-const quiet = args.includes('--quiet') || args.includes('-q') || args.includes('--no-banner');
-const target = args.find((arg) => !arg.startsWith('-'));
+const { values, positionals } = parseArgs({
+  allowPositionals: true,
+  strict: false,
+  options: { json: { type: 'boolean' }, quiet: { type: 'boolean', short: 'q' }, 'no-banner': { type: 'boolean' }, cache: { type: 'string' } },
+});
+const json = values.json === true;
+const quiet = values.quiet === true || values['no-banner'] === true;
+const target = positionals[0];
 const showBanner = !json && !quiet;
 
 if (!target) {
   if (showBanner) console.log(MASCOT_BANNER);
-  console.error('Usage: pqc-scan <path> [--json] [--quiet]');
+  console.error('Usage: pqc-scan <path> [--json] [--quiet] [--cache <file>]');
+  process.exit(2);
+}
+
+if (values.cache !== undefined && typeof values.cache !== 'string') {
+  console.error('pqc-scan: --cache needs a file name, for example --cache .pqc-scan-cache.json');
   process.exit(2);
 }
 
@@ -27,7 +38,9 @@ if (!existsSync(path)) {
 
 if (showBanner) console.log(MASCOT_BANNER);
 await loadLanguages();
-const findings = await scanInParallel(path, loadRules());
+const cache = typeof values.cache === 'string' ? new ResultCache(resolve(values.cache)) : undefined;
+const findings = await scanInParallel(path, loadRules(), { cache });
+cache?.save();
 if (json) console.log(JSON.stringify(toReport(findings), null, 2));
 else printTable(findings);
 

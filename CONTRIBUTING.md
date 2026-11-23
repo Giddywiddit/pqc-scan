@@ -8,7 +8,7 @@ npm run typecheck   # check the TypeScript code for type errors
 
 ## How the code is organised
 
-- `src/core/`: everything shared by all languages: walking folders, loading and matching rules, the cross-file check, and loading tree-sitter parsers.
+- `src/core/`: everything shared by all languages: walking folders, loading and matching rules, the cross-file check, loading tree-sitter parsers, scanning on several threads (`parallel.ts`) and the `--cache` file (`cache.ts`).
 - `src/languages/<name>/`: one adapter per language. An adapter does one job: read one file and list its cryptography findings.
 - `rules/<name>/`: the rules for that language, one YAML file per library, and a `README.md` describing what is covered.
 - `src/output/`: the text and `--json` output. The JSON format is described by `schema/report-v1.schema.json`.
@@ -42,6 +42,7 @@ The tests fail if a `rules/<name>/` folder has no adapter, an adapter has no rul
 - `test/report-schema.test.ts`: the `--json` output matches the published schema.
 - `test/integration.test.ts`: runs the command-line tool on whole folders, checking exit codes, output and errors.
 - `test/docs.test.ts`: every language and rule file is documented.
+- `test/parallel.test.ts` and `test/cache.test.ts`: several threads, and results read from the cache, give exactly the result of a plain one-thread scan.
 
 Every fixed bug becomes a permanent test in `test/fixtures/issues/`.
 
