@@ -8,7 +8,8 @@ import { ResultCache } from '../src/core/cache.ts';
 const root = new URL('..', import.meta.url).pathname;
 const cli = (...args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8' });
 
-describe('--cache', () => {
+// Each test starts the command-line tool up to three times, which can take over 5 s on a slow CI machine.
+describe('--cache', { timeout: 30_000 }, () => {
   const project = () => {
     const dir = mkdtempSync(join(tmpdir(), 'pqc-cache-'));
     writeFileSync(join(dir, 'a.c'), 'void f(void) { SHA256(d, n, out); }\n');
