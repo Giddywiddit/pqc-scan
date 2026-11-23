@@ -92,8 +92,4 @@ describe('documented limits that need whole folders', () => {
     }), loadRules());
     expect(findings.map((item) => `${item.file} ${item.ruleId}`)).toEqual(['helper.ts node-hash', 'middle.ts crypto-via-local-module']);
   });
-
-  it('does not read C++ files yet', () => {
-    expect(scanFolder(folder({ 'hash.cpp': 'void f() { SHA256(d, n, out); }\n', 'hash.cc': 'void f() { SHA256(d, n, out); }\n' }), loadRules())).toEqual([]);
-  });
 });

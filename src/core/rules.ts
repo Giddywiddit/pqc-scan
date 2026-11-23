@@ -17,6 +17,8 @@ function validateRules(value: unknown, file: string): asserts value is Omit<Modu
     if (!rule || typeof rule !== 'object' || typeof rule.id !== 'string' || !Array.isArray(rule.functions) || rule.functions.some((name) => typeof name !== 'string')) {
       throw new Error(`${file}: every rule requires an id and string functions array.`);
     }
+    if (rule.types && (!Array.isArray(rule.types) || rule.types.some((name) => typeof name !== 'string'))) throw new Error(`${file}: rule ${rule.id} types must be a string array.`);
+    if (rule.types?.length && rule.algorithmFrom) throw new Error(`${file}: rule ${rule.id} cannot take the algorithm from an argument for a type.`);
     if (!rule.category || typeof rule.category !== 'string') throw new Error(`${file}: rule ${rule.id} requires a category.`);
     if (rule.ignore) continue;
     if (!rule.algorithm && !rule.algorithmFrom && !rule.note) throw new Error(`${file}: rule ${rule.id} requires algorithm, algorithmFrom, note (unresolved) or ignore.`);

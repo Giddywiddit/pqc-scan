@@ -1,0 +1,166 @@
+# Botan's C interface (botan/ffi.h), usable from C and C++. Algorithms are named by strings, as in Botan's C++
+# interface (rules/cpp/botan.yaml).
+module: [botan]
+rules:
+  - id: botan-ffi-hash
+    functions: [botan_hash_init]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values:
+      "sha-256": { algorithm: SHA-256, status: observed-resistant }
+      "sha-384": { algorithm: SHA-384, status: observed-resistant }
+      "sha-512": { algorithm: SHA-512, status: observed-resistant }
+      "sha-512-256": { algorithm: SHA-512/256, status: observed-resistant }
+      "sha-3(256)": { algorithm: SHA3-256, status: observed-resistant }
+      "sha-3(384)": { algorithm: SHA3-384, status: observed-resistant }
+      "sha-3(512)": { algorithm: SHA3-512, status: observed-resistant }
+      "blake2b(512)": { algorithm: BLAKE2b, status: observed-resistant }
+      "sm3": { algorithm: SM3, status: observed-resistant }
+      "sha-224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha-1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "ripemd-160": { algorithm: RIPEMD-160, status: needs-review, note: "An old 160-bit hash; replace with SHA-256 or stronger." }
+  - id: botan-ffi-mac
+    functions: [botan_mac_init]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values:
+      "hmac(sha-256)": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "hmac(sha-384)": { algorithm: HMAC-SHA-384, status: observed-resistant }
+      "hmac(sha-512)": { algorithm: HMAC-SHA-512, status: observed-resistant }
+      "hmac(sha-1)": { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "cmac(aes-256)": { algorithm: AES-256-CMAC, status: observed-resistant }
+      "cmac(aes-128)": { algorithm: AES-128-CMAC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "poly1305": { algorithm: Poly1305, status: observed-resistant }
+  - id: botan-ffi-cipher
+    functions: [botan_cipher_init]
+    category: symmetric
+    algorithmFrom: { arg: 1 }
+    values:
+      "aes-256/gcm": { algorithm: AES-256-GCM, status: observed-resistant }
+      "aes-192/gcm": { algorithm: AES-192-GCM, status: observed-resistant }
+      "aes-256/ccm": { algorithm: AES-256-CCM, status: observed-resistant }
+      "aes-256/ocb": { algorithm: AES-256-OCB, status: observed-resistant }
+      "aes-256/siv": { algorithm: AES-256-SIV, status: observed-resistant }
+      "aes-256/cbc/pkcs7": { algorithm: AES-256-CBC, status: observed-resistant }
+      "aes-256/cbc/nopadding": { algorithm: AES-256-CBC, status: observed-resistant }
+      "chacha20poly1305": { algorithm: ChaCha20-Poly1305, status: observed-resistant }
+      "aes-128/gcm": { algorithm: AES-128-GCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "aes-128/ccm": { algorithm: AES-128-CCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "aes-128/ocb": { algorithm: AES-128-OCB, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "aes-128/siv": { algorithm: AES-128-SIV, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "aes-128/cbc/pkcs7": { algorithm: AES-128-CBC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "aes-128/cbc/nopadding": { algorithm: AES-128-CBC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+  - id: botan-ffi-block-cipher
+    functions: [botan_block_cipher_init]
+    category: symmetric
+    algorithmFrom: { arg: 1 }
+    values:
+      "aes-256": { algorithm: AES-256, status: observed-resistant }
+      "aes-192": { algorithm: AES-192, status: observed-resistant }
+      "aes-128": { algorithm: AES-128, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "tripledes": { algorithm: 3DES, status: needs-review, note: "Classically weak and deprecated; migrate." }
+  - id: botan-ffi-keygen
+    functions: [botan_privkey_create]
+    category: keygen
+    algorithmFrom: { arg: 1 }
+    values:
+      "rsa": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ecdsa": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ecdh": { algorithm: ECDH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ed25519": { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ed448": { algorithm: Ed448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "x25519": { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "curve25519": { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "x448": { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "dh": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "dsa": { algorithm: DSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "elgamal": { algorithm: ElGamal, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "sm2": { algorithm: SM2, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "ml-kem": { algorithm: ML-KEM, status: observed-resistant }
+      "ml-dsa": { algorithm: ML-DSA, status: observed-resistant }
+      "slh-dsa": { algorithm: SLH-DSA, status: observed-resistant }
+      "xmss": { algorithm: XMSS, status: observed-resistant, note: "XMSS is a hash-based signature approved by NIST (SP 800-208). Each private key can sign only a fixed number of times." }
+      "hss-lms": { algorithm: HSS/LMS, status: observed-resistant, note: "HSS/LMS is a hash-based signature approved by NIST (SP 800-208). Each private key can sign only a fixed number of times." }
+      "kyber": { algorithm: Kyber, status: needs-review, note: "Pre-standard Kyber, which Botan deprecates. It is believed to resist quantum computers, but the NIST standard is ML-KEM; migrate to it." }
+      "dilithium": { algorithm: Dilithium, status: needs-review, note: "Pre-standard Dilithium. It is believed to resist quantum computers, but the NIST standard is ML-DSA; migrate to it." }
+      "frodokem": { algorithm: FrodoKEM, status: needs-review, note: "Believed to resist quantum computers, but not a NIST standard. Check it is allowed by your policy." }
+      "classicmceliece": { algorithm: Classic McEliece, status: needs-review, note: "Believed to resist quantum computers, but not a NIST standard. Check it is allowed by your policy." }
+  - id: botan-ffi-rsa
+    functions: [botan_privkey_create_rsa, botan_privkey_load_rsa, botan_pubkey_load_rsa]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: botan-ffi-ecdsa
+    functions: [botan_privkey_create_ecdsa, botan_privkey_load_ecdsa, botan_pubkey_load_ecdsa]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: botan-ffi-ecdh
+    functions: [botan_privkey_create_ecdh, botan_privkey_load_ecdh]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: botan-ffi-ed25519
+    functions: [botan_privkey_load_ed25519, botan_pubkey_load_ed25519]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: botan-ffi-x25519
+    functions: [botan_privkey_load_x25519, botan_pubkey_load_x25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: botan-ffi-dh
+    functions: [botan_privkey_create_dh]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: botan-ffi-dsa
+    functions: [botan_privkey_create_dsa]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: botan-ffi-elgamal
+    functions: [botan_privkey_create_elgamal]
+    category: encryption
+    algorithm: ElGamal
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: botan-ffi-ml-kem
+    functions: [botan_privkey_load_ml_kem]
+    category: key-exchange
+    algorithm: ML-KEM
+    status: observed-resistant
+  - id: botan-ffi-ml-dsa
+    functions: [botan_privkey_load_ml_dsa]
+    category: signature
+    algorithm: ML-DSA
+    status: observed-resistant
+  - id: botan-ffi-slh-dsa
+    functions: [botan_privkey_load_slh_dsa]
+    category: signature
+    algorithm: SLH-DSA
+    status: observed-resistant
+  - id: botan-ffi-pk-operation
+    functions: [botan_pk_op_sign_create, botan_pk_op_verify_create, botan_pk_op_encrypt_create, botan_pk_op_decrypt_create, botan_pk_op_key_agreement_create, botan_pk_op_kem_encrypt_create, botan_pk_op_kem_decrypt_create]
+    category: unknown
+    status: unresolved
+    note: "Asymmetric operation; the key type is set where the key is created or loaded, which may be elsewhere."
+  - id: botan-ffi-key-material
+    functions: [botan_privkey_load, botan_pubkey_load]
+    category: keygen
+    status: unresolved
+    note: "Key type depends on the key loaded at run time; review."
+  - id: botan-ffi-random
+    functions: [botan_rng_get]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant

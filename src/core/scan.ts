@@ -27,7 +27,10 @@ export function planScan(target: string, adapters: readonly LanguageAdapter[] = 
 
 /** One rules array per language for the whole scan, so adapters can build their lookup tables once and reuse them. */
 export function rulesByAdapter(rules: ModuleRules[], adapters: readonly LanguageAdapter[] = languages): Map<LanguageAdapter, ModuleRules[]> {
-  return new Map(adapters.map((adapter) => [adapter, rules.filter((group) => group.language === adapter.id)] as const));
+  return new Map(adapters.map((adapter) => {
+    const folders = [adapter.id, ...(adapter.alsoUsesRulesOf ?? [])];
+    return [adapter, rules.filter((group) => folders.includes(group.language))] as const;
+  }));
 }
 
 /** The findings in one file. */

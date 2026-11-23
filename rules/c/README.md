@@ -1,6 +1,8 @@
 # C
 
-Files: `.c` and `.h`. The code is read with the official tree-sitter C grammar (`tree-sitter-c`), run as WebAssembly, so nothing is compiled on your machine and no build configuration is needed.
+Files: `.c`. The code is read with the official tree-sitter C grammar (`tree-sitter-c`), run as WebAssembly, so nothing is compiled on your machine and no build configuration is needed.
+
+`.h` files can hold C or C++, so they are read as described on the [C++ page](../cpp/README.md#h-files): with whichever grammar reads more of the file, and against both the C and the C++ rules. Every library below is also matched in C++ files.
 
 ## Libraries
 
@@ -12,9 +14,10 @@ Files: `.c` and `.h`. The code is read with the official tree-sitter C grammar (
 | Mbed TLS 3.6 | `mbedtls.yaml` | `mbedtls_...` hashes, ciphers, RSA, elliptic curves, Diffie-Hellman, key types (`MBEDTLS_PK_*`) and TLS setup. |
 | PSA Crypto API (Mbed TLS 3.6 and 4, TF-PSA-Crypto, Trusted Firmware-M) | `psa-crypto.yaml` | `psa_...` calls, with the algorithm read from macros such as `PSA_ALG_SHA_256` or `PSA_ALG_ECDSA(PSA_ALG_SHA_256)`, and key types from `psa_set_key_type`. |
 | wolfSSL | `wolfssl.yaml` | `wc_...` functions, including ML-KEM, ML-DSA, SLH-DSA, LMS and XMSS, and `wolfSSL_...` TLS setup, including key shares such as the hybrid group `X25519MLKEM768`. |
+| Botan's C interface (`botan/ffi.h`) | `botan.yaml` | `botan_...` hashing, MAC, cipher and key functions, with the algorithm read from strings (`botan_privkey_create(&key, "ML-KEM", "ML-KEM-768", rng)`). Botan's C++ interface is on the [C++ page](../cpp/README.md). |
 | GnuTLS | `gnutls.yaml` | `gnutls_...` hashing, HMAC, ciphers, key generation and signing, with the algorithm read from `GNUTLS_*` constants, including the ML-KEM and ML-DSA key types. |
 
-Every function and constant name in these rule files was checked against the library's header files when the rules were written: OpenSSL and libsodium from their current source, Mbed TLS 3.6, TF-PSA-Crypto, wolfSSL from its November 2026 source, and GnuTLS 3.8.14.
+Every function and constant name in these rule files was checked against the library's header files when the rules were written: OpenSSL and libsodium from their current source, Mbed TLS 3.6, TF-PSA-Crypto, wolfSSL from its November 2026 source, GnuTLS 3.8.14 and Botan 3.14.
 
 ## How the preprocessor is handled
 
@@ -30,7 +33,6 @@ C code is full of `#if`, `#ifdef` and `#define`. The tool does not run the prepr
 - A macro that renames a crypto function (`#define HASH SHA256`, then `HASH(data)`) is not followed.
 - Cryptography a project implements itself under its own function names is not recognised. For example, OpenSSH's sntrup761 key exchange is not reported. OpenSSH's ML-KEM-768 calls are reported, because its code uses the same function names as libsodium, so the report names libsodium as the library.
 - Not covered yet: the Windows cryptography functions (`BCrypt...`), Apple's (`SecKey...`, `CC_SHA256`) and NSS (`PK11_...`).
-- C++ files (`.cpp`, `.cc`) are not read yet. In a C++ project, `.h` files are read as C.
 
 ## Tested on
 

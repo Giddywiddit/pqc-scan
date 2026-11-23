@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
-import { loadLanguages } from '../src/core/scan.ts';
+import { loadLanguages, rulesByAdapter } from '../src/core/scan.ts';
 import { languages } from '../src/languages/index.ts';
 
 const groups = loadRules().filter((group) => group.rules.length > 0);
 const adapterFor = (language: string) => languages.find((adapter) => adapter.id === language)!;
+const rulesFor = rulesByAdapter(loadRules());
 beforeAll(() => loadLanguages());
 
 interface Case { name: string; language: string; code: string; expected: { ruleId: string; algorithm: string | null; status: string }[] }
@@ -14,24 +15,35 @@ const nested = (path: string, value: string): string => path.split('.').reduceRi
 
 // Every function and every algorithm value in every rule file is exercised by a synthesized call.
 const cases: Case[] = [];
-// How a call to `fn` is written in each language. In C, a key with an underscore is a constant (EVP_PKEY_RSA,
-// PSA_ALG_SHA_256) and is passed as a bare upper-case name; other keys are strings or numbers.
-const callIn: Record<string, (module: string, fn: string, args: string[]) => string> = {
+// How a call to `fn` is written in each language. In C and C++, a key with an underscore is a constant
+// (EVP_PKEY_RSA, PSA_ALG_SHA_256) and is passed as a bare upper-case name; other keys are strings or numbers.
+// C++ rule names are relative to the rule file's namespace; C rules are called from C++ as they are from C.
+const callIn: Record<string, (module: string, fn: string, args: string[], ruleLanguage: string) => string> = {
   javascript: (module, fn, args) => `import * as m from ${quote(module)};\nm.${fn}(${args.join(', ')});`,
   c: (_module, fn, args) => `void f(void) { ${fn}(${args.join(', ')}); }`,
+  cpp: (module, fn, args, ruleLanguage) => `void f() { ${ruleLanguage === 'cpp' ? `${module}::` : ''}${fn}(${args.join(', ')}); }`,
 };
 const valueIn: Record<string, (key: string) => string> = {
   javascript: quote,
   c: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
+  cpp: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
 };
-for (const group of groups) {
-  const { language } = group;
+// How a variable of a rule's type is declared, for languages with type rules.
+const declareIn: Record<string, (module: string, type: string) => string> = {
+  cpp: (module, type) => `void f() { ${module}::${type} x; }`,
+};
+// Each rule is exercised in every language that reads its folder (C rules in C and in C++ files).
+for (const group of groups) for (const adapter of languages.filter((item) => [item.id, ...(item.alsoUsesRulesOf ?? [])].includes(group.language))) {
+  const language = adapter.id;
   for (const rule of group.rules) {
+    for (const type of rule.types ?? []) {
+      cases.push({ name: `${language} ${rule.id}: type ${type}`, language, code: declareIn[language](group.module[0], type), expected: [{ ruleId: rule.id, algorithm: rule.algorithm ?? null, status: rule.status ?? 'unresolved' }] });
+    }
     for (const fn of rule.functions) {
-      const call = (args: string[]) => callIn[language](group.module[0], fn, args);
-      if (rule.ignore) cases.push({ name: `${rule.id}: ${fn} is ignored`, language, code: call([]), expected: [] });
-      else if (rule.algorithm) cases.push({ name: `${rule.id}: ${fn}`, language, code: call([]), expected: [{ ruleId: rule.id, algorithm: rule.algorithm, status: rule.status! }] });
-      else if (!rule.algorithmFrom) cases.push({ name: `${rule.id}: ${fn}`, language, code: call([]), expected: [{ ruleId: rule.id, algorithm: null, status: 'unresolved' }] });
+      const call = (args: string[]) => callIn[language](group.module[0], fn, args, group.language);
+      if (rule.ignore) cases.push({ name: `${language} ${rule.id}: ${fn} is ignored`, language, code: call([]), expected: [] });
+      else if (rule.algorithm) cases.push({ name: `${language} ${rule.id}: ${fn}`, language, code: call([]), expected: [{ ruleId: rule.id, algorithm: rule.algorithm, status: rule.status! }] });
+      else if (!rule.algorithmFrom) cases.push({ name: `${language} ${rule.id}: ${fn}`, language, code: call([]), expected: [{ ruleId: rule.id, algorithm: null, status: 'unresolved' }] });
       else {
         const { arg, property } = rule.algorithmFrom;
         for (const [key, value] of Object.entries(rule.values ?? {})) {
@@ -73,7 +85,7 @@ describe('rule files', () => {
   });
 
   it.each(cases.map((item) => [item.name, item] as const))('%s', (_name, item) => {
-    const rules = groups.filter((group) => group.language === item.language);
+    const rules = rulesFor.get(adapterFor(item.language))!;
     const findings = adapterFor(item.language).scanSource(item.code, 'f', rules).map(({ ruleId, algorithm, status }) => ({ ruleId, algorithm, status }));
     expect(findings).toEqual(item.expected);
   });

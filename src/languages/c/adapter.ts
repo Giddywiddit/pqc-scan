@@ -69,7 +69,8 @@ function argumentNames(node: Node | null | undefined, values: Record<string, unk
   const value = unwrap(node);
   if (value.type === 'string_literal') return /^"[^"\\]*"$/.test(value.text) ? [value.text.slice(1, -1)] : null;
   if (value.type === 'number_literal') return [value.text];
-  const name = value.type === 'identifier'
+  // A type_identifier is a bare name that C++ read as a type (see the C++ adapter's "most vexing parse" note).
+  const name = value.type === 'identifier' || value.type === 'type_identifier'
     ? value.text
     : value.type === 'call_expression' && value.childForFieldName('function')?.type === 'identifier'
       ? value.childForFieldName('function')!.text
@@ -77,7 +78,8 @@ function argumentNames(node: Node | null | undefined, values: Record<string, unk
   return name !== null && lookup(values, name) !== undefined ? [name] : null;
 }
 
-interface Lookup {
+/** The C rules, indexed for matching. */
+export interface CLookup {
   byFunction: Map<string, { rule: Rule; library: string }>;
   /** Any known function name anywhere in the text. A file without one cannot produce a finding. */
   mentioned: RegExp;
@@ -86,9 +88,9 @@ interface Lookup {
 }
 
 // Built once per rules array: a scan passes the same array for every file.
-const lookups = new WeakMap<ModuleRules[], Lookup | null>();
+const lookups = new WeakMap<ModuleRules[], CLookup | null>();
 
-function lookupFor(rules: ModuleRules[]): Lookup | null {
+export function cLookupFor(rules: ModuleRules[]): CLookup | null {
   if (lookups.has(rules)) return lookups.get(rules)!;
   const byFunction = new Map<string, { rule: Rule; library: string }>();
   for (const group of rules) for (const rule of group.rules) for (const name of rule.functions) {
@@ -100,63 +102,107 @@ function lookupFor(rules: ModuleRules[]): Lookup | null {
   return lookup;
 }
 
+/**
+ * The two passes every C or C++ file gets: the code with directives blanked, then the macro bodies on their own. Both
+ * keep the source's line numbers, and no line has content in both, so nothing is reported twice.
+ */
+export function passes(text: string): { source: string; where: string }[] {
+  return [{ source: blankDirectives(text), where: '' }, { source: macroBodies(text), where: ' inside a #define macro' }];
+}
+
+/** The arguments of a call_expression node. */
+export const argumentsOf = (call: Node): Node[] => call.childForFieldName('arguments')?.namedChildren ?? [];
+
+/** The findings for one call on `line` matched by `rule`, with its argument nodes; `matched` names what matched. */
+export function callFindings(args: Node[], line: number, rule: Rule, matched: string, file: string, where: string): Finding[] {
+  return ruleFindings(rule, file, line, [{ note: `matched ${matched}${where}` }], () => ({
+    names: argumentNames(args[rule.algorithmFrom!.arg], rule.values ?? {}),
+    qualifiers: [],
+  }));
+}
+
+/** How many bytes the parser could not read, given its ERROR nodes in source order (nested ones counted once). */
+export function unreadableBytes(errors: Node[]): number {
+  let bytes = 0;
+  let end = -1;
+  for (const node of errors) {
+    if (node.startIndex >= end) bytes += node.endIndex - node.startIndex;
+    end = Math.max(end, node.endIndex);
+  }
+  return bytes;
+}
+
+/**
+ * Fail closed: a known crypto name inside a region the parser could not read is reported as unresolved, not dropped.
+ * `patterns` are tried in order on each line, each with how to describe what it found ("a call to", "a use of"); the
+ * first group of a match is the name shown.
+ */
+export function unreadableFindings(regions: Node[], patterns: [RegExp, string][], file: string, where: string, reportedLines: Set<number>): Finding[] {
+  const findings: Finding[] = [];
+  for (const region of regions) {
+    region.text.split('\n').forEach((content, offset) => {
+      const line = region.startPosition.row + 1 + offset;
+      const found = patterns.map(([pattern, what]) => [pattern.exec(content)?.[1], what] as const).find(([name]) => name);
+      if (found && !reportedLines.has(line)) {
+        reportedLines.add(line);
+        findings.push(finding(file, line, 'parse-error', 'unknown', null, 'unresolved', `Looks like ${found[1]} ${found[0]}${where}, but this part of the file could not be parsed.`));
+      }
+    });
+  }
+  return findings;
+}
+
+/** Scans one parsed pass with the C grammar's query, adding to `findings`. */
+export function scanCTree(root: Node, lookup: CLookup, file: string, where: string, findings: Finding[], reportedLines: Set<number>): void {
+  // The parser finds the calls and unreadable regions itself, in source order, which is far faster than visiting
+  // every node from JavaScript.
+  const errorRegions: Node[] = [];
+  for (const { name, node } of grammar().query.captures(root)) {
+    if (name === 'error') {
+      errorRegions.push(node);
+      continue;
+    }
+    const callee = node.childForFieldName('function')!;
+    const match = lookup.byFunction.get(callee.text);
+    if (!match) continue;
+    reportedLines.add(node.startPosition.row + 1);
+    findings.push(...callFindings(argumentsOf(node), node.startPosition.row + 1, match.rule, `${match.library} function ${callee.text}`, file, where));
+  }
+  findings.push(...unreadableFindings(errorRegions, [[lookup.called, 'a call to']], file, where, reportedLines));
+}
+
+/** The loaded C parser and its query. */
+export function grammar(): { parser: Parser; query: Query } {
+  if (!parser || !query) throw new Error('The C grammar is not loaded: call loadLanguages() before scanning.');
+  return { parser, query };
+}
+
 function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[] {
-  if (!parser) throw new Error('The C grammar is not loaded: call loadLanguages() before scanning.');
-  const lookup = lookupFor(rules);
+  const lookup = cLookupFor(rules);
   // Every finding needs a known function name in the text, so a file without one is not parsed at all.
   if (!lookup || !lookup.mentioned.test(text)) return [];
-  const { byFunction, called: known } = lookup;
   const findings: Finding[] = [];
   const reportedLines = new Set<number>();
-
-  // The code with directives blanked, then the macro bodies on their own. Both keep the source's line numbers, and no
-  // line has content in both, so nothing is reported twice.
-  for (const [source, where] of [[blankDirectives(text), ''], [macroBodies(text), ' inside a #define macro']] as const) {
-    const tree = parser.parse(source);
+  for (const { source, where } of passes(text)) {
+    const tree = grammar().parser.parse(source);
     if (!tree) throw new Error(`${file}: the C parser returned no tree.`);
-    // The parser finds the calls and unreadable regions itself, in source order, which is far faster than visiting
-    // every node from JavaScript.
-    const errorRegions: Node[] = [];
-    for (const { name, node } of query!.captures(tree.rootNode)) {
-      if (name === 'error') {
-        errorRegions.push(node);
-        continue;
-      }
-      const callee = node.childForFieldName('function')!;
-      const match = byFunction.get(callee.text);
-      if (!match) continue;
-      const line = node.startPosition.row + 1;
-      reportedLines.add(line);
-      const args = node.childForFieldName('arguments')?.namedChildren ?? [];
-      findings.push(...ruleFindings(match.rule, file, line, [{ note: `matched ${match.library} function ${callee.text}${where}` }], () => ({
-        names: argumentNames(args[match.rule.algorithmFrom!.arg], match.rule.values ?? {}),
-        qualifiers: [],
-      })));
-    }
-
-    // Fail closed: a known crypto function name inside a region the parser could not read is reported, not dropped.
-    for (const region of errorRegions) {
-      region.text.split('\n').forEach((content, offset) => {
-        const line = region.startPosition.row + 1 + offset;
-        const name = known.exec(content)?.[1];
-        if (name && !reportedLines.has(line)) {
-          reportedLines.add(line);
-          findings.push(finding(file, line, 'parse-error', 'unknown', null, 'unresolved', `Looks like a call to ${name}${where}, but this part of the file could not be parsed.`));
-        }
-      });
-    }
+    scanCTree(tree.rootNode, lookup, file, where, findings, reportedLines);
     // Trees live in the parser's WebAssembly memory, which JavaScript's garbage collector does not free.
     tree.delete();
   }
   return findings.sort((left, right) => left.line - right.line);
 }
 
+/** Loads the C grammar once; the C++ adapter also uses it for `.h` files. */
+export async function loadC(): Promise<void> {
+  parser ??= await createParser('c');
+  query ??= new Query(parser.language!, '(call_expression function: (identifier)) @call (ERROR) @error');
+}
+
+// `.h` files are read by the C++ adapter, which tries both grammars on them.
 export const c: LanguageAdapter = {
   id: 'c',
-  extensions: ['.c', '.h'],
-  async load() {
-    parser ??= await createParser('c');
-    query ??= new Query(parser.language!, '(call_expression function: (identifier)) @call (ERROR) @error');
-  },
+  extensions: ['.c'],
+  load: loadC,
   scanSource,
 };

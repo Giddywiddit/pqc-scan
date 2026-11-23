@@ -28,6 +28,8 @@ export interface AlgorithmValue {
 export interface Rule {
   id: string;
   functions: string[];
+  /** Type names whose every use counts (C++: `CryptoPP::SHA256 h;`). Matched inside the rule file's namespace. */
+  types?: string[];
   category: Category;
   algorithm?: string;
   status?: Status;

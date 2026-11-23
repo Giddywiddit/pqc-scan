@@ -12,6 +12,8 @@ export interface ImportRef {
 export interface LanguageAdapter {
   /** Matches the `rules/<id>/` folder that holds this language's rule files. */
   id: string;
+  /** Rule folders to read besides its own, such as C's for C++, which calls the same C libraries. */
+  alsoUsesRulesOf?: readonly string[];
   /** File extensions this adapter reads, with the leading dot. */
   extensions: readonly string[];
   /** Optional one-time async setup, such as loading a parser grammar. The core calls it before any scan. */

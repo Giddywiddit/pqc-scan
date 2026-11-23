@@ -1,0 +1,264 @@
+# Crypto++ (namespace CryptoPP). Its algorithms are classes, so most rules list types: every use of the type counts,
+# such as `CryptoPP::SHA256 h;` or the template argument in `CryptoPP::GCM<CryptoPP::AES>::Encryption`.
+module: [CryptoPP]
+rules:
+  - id: cryptopp-sha256
+    functions: []
+    types: [SHA256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: cryptopp-sha384
+    functions: []
+    types: [SHA384]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: cryptopp-sha512
+    functions: []
+    types: [SHA512]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: cryptopp-sha3
+    functions: []
+    types: [SHA3_256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: cryptopp-sha3-384
+    functions: []
+    types: [SHA3_384]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: cryptopp-sha3-512
+    functions: []
+    types: [SHA3_512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: cryptopp-shake256
+    functions: []
+    types: [SHAKE256]
+    category: hash
+    algorithm: SHAKE256
+    status: observed-resistant
+  - id: cryptopp-blake2b
+    functions: []
+    types: [BLAKE2b]
+    category: hash
+    algorithm: BLAKE2b
+    status: observed-resistant
+  - id: cryptopp-blake2s
+    functions: []
+    types: [BLAKE2s]
+    category: hash
+    algorithm: BLAKE2s
+    status: observed-resistant
+  - id: cryptopp-sha224
+    functions: []
+    types: [SHA224]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: cryptopp-sha3-224
+    functions: []
+    types: [SHA3_224]
+    category: hash
+    algorithm: SHA3-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: cryptopp-shake128
+    functions: []
+    types: [SHAKE128]
+    category: hash
+    algorithm: SHAKE128
+    status: needs-review
+    note: "128-bit security level; a quantum computer reduces its margin. Review migration policy."
+  - id: cryptopp-sha1
+    functions: []
+    types: [SHA1]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: cryptopp-md5
+    functions: []
+    types: [Weak::MD5, Weak1::MD5]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: cryptopp-md4
+    functions: []
+    types: [Weak::MD4, Weak1::MD4, Weak::MD2, Weak1::MD2]
+    category: hash
+    algorithm: MD4 or MD2
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: cryptopp-ripemd160
+    functions: []
+    types: [RIPEMD160]
+    category: hash
+    algorithm: RIPEMD-160
+    status: needs-review
+    note: "An old 160-bit hash; replace with SHA-256 or stronger."
+  - id: cryptopp-aes
+    functions: []
+    types: [AES, Rijndael]
+    category: symmetric
+    algorithm: AES
+    status: unresolved
+    note: "The AES key size is set when the key is set (SetKey or the constructor): 128-bit needs review, 192 and 256 are fine."
+  - id: cryptopp-ecb
+    functions: []
+    types: [ECB_Mode]
+    category: symmetric
+    algorithm: ECB
+    status: needs-review
+    note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM."
+  - id: cryptopp-chacha20-poly1305
+    functions: []
+    types: [ChaCha20Poly1305, XChaCha20Poly1305]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: cryptopp-chacha
+    functions: []
+    types: [ChaCha, XChaCha20]
+    category: symmetric
+    algorithm: ChaCha20
+    status: observed-resistant
+  - id: cryptopp-salsa20
+    functions: []
+    types: [Salsa20, XSalsa20]
+    category: symmetric
+    algorithm: Salsa20
+    status: observed-resistant
+  - id: cryptopp-3des
+    functions: []
+    types: [DES_EDE3, DES_EDE2]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: cryptopp-des
+    functions: []
+    types: [DES]
+    category: symmetric
+    algorithm: DES
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: cryptopp-blowfish
+    functions: []
+    types: [Blowfish]
+    category: symmetric
+    algorithm: Blowfish
+    status: needs-review
+    note: "Its 64-bit block is too small for large amounts of data; replace with AES-256 or ChaCha20-Poly1305."
+  - id: cryptopp-rc4
+    functions: []
+    types: [Weak::ARC4, Weak1::ARC4]
+    category: symmetric
+    algorithm: RC4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: cryptopp-rsa
+    functions: []
+    types: [RSA, InvertibleRSAFunction, RSAFunction]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-rsa-encrypt
+    functions: []
+    types: [RSAES, RSAES_OAEP_SHA_Encryptor, RSAES_OAEP_SHA_Decryptor, RSAES_PKCS1v15_Encryptor, RSAES_PKCS1v15_Decryptor]
+    category: encryption
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-rsa-sign
+    functions: []
+    types: [RSASS, RSASSA_PKCS1v15_SHA_Signer, RSASSA_PKCS1v15_SHA_Verifier]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: cryptopp-ec
+    functions: []
+    types: [DL_GroupParameters_EC]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-ecdsa
+    functions: []
+    types: [ECDSA, ECDSA_RFC6979, ECGDSA, ECNR]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: cryptopp-ecdh
+    functions: []
+    types: [ECDH, ECMQV]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-ecies
+    functions: []
+    types: [ECIES]
+    category: encryption
+    algorithm: ECIES
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-x25519
+    functions: []
+    types: [x25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-ed25519
+    functions: []
+    types: [ed25519, ed25519Signer, ed25519Verifier, ed25519PrivateKey, ed25519PublicKey]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: cryptopp-dh
+    functions: []
+    types: [DH, DH2, MQV]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-dsa
+    functions: []
+    types: [DSA, DSA2, NR]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: cryptopp-elgamal
+    functions: []
+    types: [ElGamal]
+    category: encryption
+    algorithm: ElGamal
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: cryptopp-factoring
+    functions: []
+    types: [Rabin, RW, LUC]
+    category: signature
+    algorithm: Rabin, RW or LUC
+    status: vulnerable
+    note: "Based on factoring or discrete logarithms, which a quantum computer could solve (using Shor's algorithm). Plan to replace it."
+  - id: cryptopp-random
+    functions: [OS_GenerateRandomBlock]
+    types: [AutoSeededRandomPool, AutoSeededX917RNG, NonblockingRng]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
