@@ -1,0 +1,74 @@
+# rustls, Rust's TLS library. What decides the key exchange is the crypto provider and the key-exchange groups it
+# offers: rustls 0.23 has them under rustls::crypto::{aws_lc_rs, ring}, and 0.24 moves them into the crates
+# rustls-aws-lc-rs and rustls-ring. A group named explicitly (kx_group::X25519) is reported as that group, and a provider
+# (default_provider(), DEFAULT_PROVIDER) or its group lists as the groups it offers by default. Where a TLS
+# configuration is built is reported too.
+module: [rustls, rustls_aws_lc_rs, rustls_ring]
+rules:
+  - id: rustls-x25519mlkem768
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::kx_group::X25519MLKEM768, rustls_aws_lc_rs::kx_group::X25519MLKEM768]
+    category: key-exchange
+    algorithm: X25519MLKEM768
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or X25519 holds."
+  - id: rustls-secp256r1mlkem768
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::kx_group::SECP256R1MLKEM768, rustls_aws_lc_rs::kx_group::SECP256R1MLKEM768]
+    category: key-exchange
+    algorithm: SecP256r1MLKEM768
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or P-256 holds."
+  - id: rustls-mlkem768
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::kx_group::MLKEM768, rustls_aws_lc_rs::kx_group::MLKEM768]
+    category: key-exchange
+    algorithm: ML-KEM-768
+    status: observed-resistant
+  - id: rustls-mlkem1024
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::kx_group::MLKEM1024, rustls_aws_lc_rs::kx_group::MLKEM1024]
+    category: key-exchange
+    algorithm: ML-KEM-1024
+    status: observed-resistant
+  - id: rustls-x25519
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::kx_group::X25519, rustls_aws_lc_rs::kx_group::X25519, rustls::crypto::ring::kx_group::X25519, rustls_ring::kx_group::X25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustls-secp256r1
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::kx_group::SECP256R1, rustls_aws_lc_rs::kx_group::SECP256R1, rustls::crypto::ring::kx_group::SECP256R1, rustls_ring::kx_group::SECP256R1]
+    category: key-exchange
+    algorithm: ECDH-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustls-secp384r1
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::kx_group::SECP384R1, rustls_aws_lc_rs::kx_group::SECP384R1, rustls::crypto::ring::kx_group::SECP384R1, rustls_ring::kx_group::SECP384R1]
+    category: key-exchange
+    algorithm: ECDH-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustls-aws-lc-rs-provider
+    functions: []
+    names: [rustls::crypto::aws_lc_rs::default_provider, rustls::crypto::aws_lc_rs::DEFAULT_KX_GROUPS, rustls::crypto::aws_lc_rs::ALL_KX_GROUPS, rustls_aws_lc_rs::DEFAULT_PROVIDER, rustls_aws_lc_rs::DEFAULT_FIPS_PROVIDER, rustls_aws_lc_rs::DEFAULT_KX_GROUPS, rustls_aws_lc_rs::ALL_KX_GROUPS]
+    category: key-exchange
+    algorithm: X25519MLKEM768
+    status: observed-resistant
+    note: "rustls's aws-lc-rs provider offers the hybrid post-quantum group X25519MLKEM768 first by default (in rustls 0.23, unless built without its default prefer-post-quantum feature). Check any kx_groups set in the code."
+  - id: rustls-ring-provider
+    functions: []
+    names: [rustls::crypto::ring::default_provider, rustls::crypto::ring::DEFAULT_KX_GROUPS, rustls::crypto::ring::ALL_KX_GROUPS, rustls_ring::DEFAULT_PROVIDER, rustls_ring::DEFAULT_KX_GROUPS, rustls_ring::ALL_KX_GROUPS]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "rustls's ring provider offers only the classical groups X25519, P-256 and P-384, which a quantum computer could break. The aws-lc-rs provider offers the hybrid post-quantum group X25519MLKEM768."
+  - id: rustls-config
+    functions: []
+    names: [rustls::ClientConfig::builder, rustls::ClientConfig::builder_with_protocol_versions, rustls::client::ClientConfig::builder, rustls::client::ClientConfig::builder_with_protocol_versions, rustls::ServerConfig::builder, rustls::ServerConfig::builder_with_protocol_versions, rustls::server::ServerConfig::builder, rustls::server::ServerConfig::builder_with_protocol_versions]
+    category: key-exchange
+    status: unresolved
+    note: "Sets up TLS. The key exchange depends on the crypto provider: aws-lc-rs prefers the hybrid post-quantum group X25519MLKEM768, ring offers only classical groups. In rustls 0.23, builder() uses the provider chosen by Cargo features (aws-lc-rs by default). Check the provider and any kx_groups set."

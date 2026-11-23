@@ -1,0 +1,50 @@
+# The jsonwebtoken crate (JWT). The signing algorithm is a variant of its Algorithm enum, such as
+# `Header::new(Algorithm::RS256)` or `Validation::new(Algorithm::ES256)`, reported wherever it is named.
+module: [jsonwebtoken]
+rules:
+  - id: rust-jwt-rsa
+    functions: []
+    names: [jsonwebtoken::Algorithm::RS256, jsonwebtoken::Algorithm::RS384, jsonwebtoken::Algorithm::RS512]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rust-jwt-rsa-pss
+    functions: []
+    names: [jsonwebtoken::Algorithm::PS256, jsonwebtoken::Algorithm::PS384, jsonwebtoken::Algorithm::PS512]
+    category: signature
+    algorithm: RSA-PSS
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rust-jwt-ecdsa
+    functions: []
+    names: [jsonwebtoken::Algorithm::ES256, jsonwebtoken::Algorithm::ES384]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rust-jwt-eddsa
+    functions: []
+    names: [jsonwebtoken::Algorithm::EdDSA]
+    category: signature
+    algorithm: EdDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rust-jwt-hs256
+    functions: []
+    names: [jsonwebtoken::Algorithm::HS256]
+    category: signature
+    algorithm: HMAC-SHA256
+    status: observed-resistant
+  - id: rust-jwt-hs384
+    functions: []
+    names: [jsonwebtoken::Algorithm::HS384]
+    category: signature
+    algorithm: HMAC-SHA384
+    status: observed-resistant
+  - id: rust-jwt-hs512
+    functions: []
+    names: [jsonwebtoken::Algorithm::HS512]
+    category: signature
+    algorithm: HMAC-SHA512
+    status: observed-resistant

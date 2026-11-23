@@ -1,0 +1,11 @@
+# Random numbers read straight from the operating system: getrandom, and OsRng / SysRng from rand and rand_core.
+# rand's ThreadRng (`rand::rng()`, `rand::thread_rng()`) is also seeded from the operating system, but it is used for
+# much else besides keys (shuffling, sampling, tests), so it is not reported.
+module: [getrandom, rand, rand_core]
+rules:
+  - id: rust-os-random
+    functions: []
+    names: [getrandom, rand::rngs::OsRng, rand::rngs::SysRng, rand_core::OsRng]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant

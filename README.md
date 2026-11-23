@@ -3,7 +3,7 @@
 ```
  /\_/\
 ( 0.1 )    [ pqc-scan • Post-Quantum Cryptography Scanner ]
- > ^ <     Finds the cryptography in your JavaScript, TypeScript, C and C++
+ > ^ <     Finds the cryptography in your JavaScript, TypeScript, C, C++ and Rust
            ---------------------------------------------------------
            Looks for what quantum computers will break (NIST FIPS 203/204/205)
 ```
@@ -32,7 +32,7 @@ NIST has published replacements believed to resist quantum computers: ML-KEM (FI
 
 ## Try it
 
-You need [Node.js](https://nodejs.org) 22 or newer. `npm install` downloads about 135 MB: the C and C++ parsers (54 MB), TypeScript (23 MB, used to read JavaScript and TypeScript), and the tools that run the tests.
+You need [Node.js](https://nodejs.org) 22 or newer. `npm install` downloads about 145 MB: the C, C++ and Rust parsers (68 MB), TypeScript (23 MB, used to read JavaScript and TypeScript), and the tools that run the tests.
 
 ```sh
 git clone https://github.com/Giddywiddit/pqc-scan.git
@@ -79,8 +79,9 @@ Exit status: 0 when every finding is ✅ or nothing was found, 1 when any findin
 | JavaScript / TypeScript | Node.js crypto, WebCrypto, jsonwebtoken, jws | [rules/javascript](rules/javascript/README.md) |
 | C | OpenSSL, libsodium, Mbed TLS, PSA Crypto, wolfSSL, GnuTLS, Botan | [rules/c](rules/c/README.md) |
 | C++ | Crypto++, Botan, and every C library above | [rules/cpp](rules/cpp/README.md) |
+| Rust | RustCrypto, ring, aws-lc-rs, the openssl crate, rustls, jsonwebtoken | [rules/rust](rules/rust/README.md) |
 
-Go, Rust, Python and Java are planned. Each language page lists what is matched, its limits, and the real projects it was tested on.
+Go, Python and Java are planned. Each language page lists what is matched, its limits, and the real projects it was tested on.
 
 ## What it cannot see
 
@@ -89,14 +90,14 @@ The tool reads code without running it, so it has blind spots. Read these before
 - **A clean result does not mean "no cryptography".** Cryptography reached in a way the tool cannot follow is missed. Each language page lists those ways.
 - **Only the languages and libraries listed above are covered.** Cryptography inside a package you installed is scanned only if you scan that package's code.
 - **Cryptography a project writes itself**, under its own function names, is not recognised.
-- **It does not inspect** server settings, certificate files or compiled programs. In C and C++, it flags where TLS (the encryption behind HTTPS) is set up, so you can check the settings yourself.
+- **It does not inspect** server settings, certificate files or compiled programs. In C, C++ and Rust (the openssl crate and rustls), it flags where TLS (the encryption behind HTTPS) is set up, so you can check the settings yourself.
 
 The limits listed on each language page are pinned by automated tests, so they cannot change without anyone noticing.
 
 ## How we know it is reliable
 
 - **Over 3,000 automated tests** run on every change, including a generated test for every function and algorithm the tool recognises.
-- **Names are checked against the real thing:** the JavaScript names against Node.js itself and the JWT standards (RFC 7518 and RFC 8037) in automated tests, and the C and C++ names against each library's header files when the rules were written.
+- **Names are checked against the real thing:** the JavaScript names against Node.js itself and the JWT standards (RFC 7518 and RFC 8037) in automated tests, the C and C++ names against each library's header files, and the Rust names against each crate's source code, when the rules were written.
 - **Real projects:** it was run on well-known open-source projects in each language, and its results were compared with a separate text search of the same code. The language pages list the projects and the numbers.
 - **Every fixed bug becomes a permanent test.**
 

@@ -17,27 +17,32 @@ const nested = (path: string, value: string): string => path.split('.').reduceRi
 const cases: Case[] = [];
 // How a call to `fn` is written in each language. In C and C++, a key with an underscore is a constant
 // (EVP_PKEY_RSA, PSA_ALG_SHA_256) and is passed as a bare upper-case name; other keys are strings or numbers.
-// C++ rule names are relative to the rule file's namespace; C rules are called from C++ as they are from C.
+// C++ rule names are relative to the rule file's namespace; C rules are called from C++ as they are from C. Rust rule
+// names are full paths from the crate.
 const callIn: Record<string, (module: string, fn: string, args: string[], ruleLanguage: string) => string> = {
   javascript: (module, fn, args) => `import * as m from ${quote(module)};\nm.${fn}(${args.join(', ')});`,
   c: (_module, fn, args) => `void f(void) { ${fn}(${args.join(', ')}); }`,
   cpp: (module, fn, args, ruleLanguage) => `void f() { ${ruleLanguage === 'cpp' ? `${module}::` : ''}${fn}(${args.join(', ')}); }`,
+  rust: (_module, fn, args) => `fn f() { ${fn}(${args.join(', ')}); }`,
 };
 const valueIn: Record<string, (key: string) => string> = {
   javascript: quote,
   c: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
   cpp: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
+  rust: quote,
 };
-// How a variable of a rule's type is declared, for languages with type rules.
-const declareIn: Record<string, (module: string, type: string) => string> = {
+// How a rule's name is used, for languages with name rules: a C++ variable of the type, or a Rust path below the name
+// (a crate-root name such as `md5` is always used through something inside it).
+const declareIn: Record<string, (module: string, name: string) => string> = {
   cpp: (module, type) => `void f() { ${module}::${type} x; }`,
+  rust: (_module, name) => `fn f() { let _ = ${name}::new(); }`,
 };
 // Each rule is exercised in every language that reads its folder (C rules in C and in C++ files).
 for (const group of groups) for (const adapter of languages.filter((item) => [item.id, ...(item.alsoUsesRulesOf ?? [])].includes(group.language))) {
   const language = adapter.id;
   for (const rule of group.rules) {
-    for (const type of rule.types ?? []) {
-      cases.push({ name: `${language} ${rule.id}: type ${type}`, language, code: declareIn[language](group.module[0], type), expected: [{ ruleId: rule.id, algorithm: rule.algorithm ?? null, status: rule.status ?? 'unresolved' }] });
+    for (const name of rule.names ?? []) {
+      cases.push({ name: `${language} ${rule.id}: name ${name}`, language, code: declareIn[language](group.module[0], name), expected: [{ ruleId: rule.id, algorithm: rule.algorithm ?? null, status: rule.status ?? 'unresolved' }] });
     }
     for (const fn of rule.functions) {
       const call = (args: string[]) => callIn[language](group.module[0], fn, args, group.language);
@@ -66,9 +71,9 @@ describe('rule files', () => {
     expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
   });
 
-  it('lists each function under only one rule per module (the first match would hide the rest)', () => {
+  it('lists each function or name under only one rule per module (the first match would hide the rest)', () => {
     for (const group of groups) {
-      const functions = group.rules.flatMap((rule) => rule.functions);
+      const functions = group.rules.flatMap((rule) => [...rule.functions, ...(rule.names ?? [])]);
       expect(functions.filter((fn, index) => functions.indexOf(fn) !== index), group.module.join(',')).toEqual([]);
     }
   });

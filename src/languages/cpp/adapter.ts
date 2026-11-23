@@ -37,7 +37,7 @@ function lookupFor(rules: ModuleRules[]): CppLookup {
     const types = new Map<string, Rule>();
     for (const rule of group.rules) {
       for (const name of rule.functions) if (!functions.has(name)) functions.set(name, rule);
-      for (const name of rule.types ?? []) if (!types.has(name)) types.set(name, rule);
+      for (const name of rule.names ?? []) if (!types.has(name)) types.set(name, rule);
     }
     const names = [...functions.keys(), ...types.keys()].map(escape).join('|');
     namespaces.set(group.module[0], { functions, types, used: new RegExp(`\\b(${escape(group.module[0])}::(?:\\w+::)*?(?:${names}))\\b`) });

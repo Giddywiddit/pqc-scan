@@ -28,8 +28,11 @@ export interface AlgorithmValue {
 export interface Rule {
   id: string;
   functions: string[];
-  /** Type names whose every use counts (C++: `CryptoPP::SHA256 h;`). Matched inside the rule file's namespace. */
-  types?: string[];
+  /**
+   * Names whose every use counts, called or not: C++ types (`CryptoPP::SHA256 h;`), matched inside the rule file's
+   * namespace, and Rust paths from the crate (`sha2::Sha256`, `ring::digest::SHA256`).
+   */
+  names?: string[];
   category: Category;
   algorithm?: string;
   status?: Status;
@@ -47,4 +50,6 @@ export interface ModuleRules {
   rules: Rule[];
   /** Constructors whose instances are WebCrypto objects (`new Crypto()` from a polyfill). */
   constructs?: string[];
+  /** Rust: crates that copy another crate's interface, read as that crate (`{ aws_lc_rs: ring }`). */
+  mirrors?: Record<string, string>;
 }

@@ -1,0 +1,468 @@
+# The openssl crate (github.com/sfackler/rust-openssl), Rust's interface to OpenSSL. Names are paths from the crate:
+# digests (`MessageDigest::sha256()`, `Md::sha256()`, `openssl::sha::sha256`), ciphers (`Cipher::aes_256_gcm()`), and key
+# types by module (`openssl::rsa`, `openssl::ec`) or by `pkey::Id`. A digest chosen by name is read from the string.
+module: [openssl]
+rules:
+  - id: openssl-rs-md5
+    functions: []
+    names: [openssl::hash::MessageDigest::md5, openssl::md::Md::md5]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: openssl-rs-sha1
+    functions: []
+    names: [openssl::hash::MessageDigest::sha1, openssl::md::Md::sha1, openssl::sha::sha1, openssl::sha::Sha1]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: openssl-rs-sha224
+    functions: []
+    names: [openssl::hash::MessageDigest::sha224, openssl::md::Md::sha224, openssl::sha::sha224, openssl::sha::Sha224]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: openssl-rs-sha256
+    functions: []
+    names: [openssl::hash::MessageDigest::sha256, openssl::md::Md::sha256, openssl::sha::sha256, openssl::sha::Sha256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: openssl-rs-sha384
+    functions: []
+    names: [openssl::hash::MessageDigest::sha384, openssl::md::Md::sha384, openssl::sha::sha384, openssl::sha::Sha384]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: openssl-rs-sha512
+    functions: []
+    names: [openssl::hash::MessageDigest::sha512, openssl::md::Md::sha512, openssl::sha::sha512, openssl::sha::Sha512]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: openssl-rs-sha3-224
+    functions: []
+    names: [openssl::hash::MessageDigest::sha3_224, openssl::md::Md::sha3_224]
+    category: hash
+    algorithm: SHA3-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: openssl-rs-sha3-256
+    functions: []
+    names: [openssl::hash::MessageDigest::sha3_256, openssl::md::Md::sha3_256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: openssl-rs-sha3-384
+    functions: []
+    names: [openssl::hash::MessageDigest::sha3_384, openssl::md::Md::sha3_384]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: openssl-rs-sha3-512
+    functions: []
+    names: [openssl::hash::MessageDigest::sha3_512, openssl::md::Md::sha3_512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: openssl-rs-shake128
+    functions: []
+    names: [openssl::hash::MessageDigest::shake_128, openssl::md::Md::shake128]
+    category: hash
+    algorithm: SHAKE128
+    status: needs-review
+    note: "128-bit security level; a quantum computer reduces its margin. Review migration policy."
+  - id: openssl-rs-shake256
+    functions: []
+    names: [openssl::hash::MessageDigest::shake_256, openssl::md::Md::shake256]
+    category: hash
+    algorithm: SHAKE256
+    status: observed-resistant
+  - id: openssl-rs-ripemd160
+    functions: []
+    names: [openssl::hash::MessageDigest::ripemd160, openssl::md::Md::ripemd160]
+    category: hash
+    algorithm: RIPEMD-160
+    status: needs-review
+    note: "An old 160-bit hash; replace with SHA-256 or stronger."
+  - id: openssl-rs-sm3
+    functions: []
+    names: [openssl::hash::MessageDigest::sm3, openssl::md::Md::sm3]
+    category: hash
+    algorithm: SM3
+    status: observed-resistant
+  - id: openssl-rs-3des
+    functions: []
+    names: [openssl::symm::Cipher::des_ede3, openssl::symm::Cipher::des_ede3_cbc, openssl::symm::Cipher::des_ede3_ecb, openssl::symm::Cipher::des_ede3_cfb64, openssl::symm::Cipher::des_ede3_cfb8, openssl::symm::Cipher::des_ede3_ofb, openssl::cipher::Cipher::des_ede3, openssl::cipher::Cipher::des_ede3_ecb, openssl::cipher::Cipher::des_ede3_cbc, openssl::cipher::Cipher::des_ede3_cfb8, openssl::cipher::Cipher::des_ede3_cfb64, openssl::cipher::Cipher::des_ede3_ofb]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: openssl-rs-aes-128-cbc
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_cbc, openssl::cipher::Cipher::aes_128_cbc]
+    category: symmetric
+    algorithm: AES-128-CBC
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-ccm
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_ccm, openssl::cipher::Cipher::aes_128_ccm]
+    category: symmetric
+    algorithm: AES-128-CCM
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-cfb
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_cfb1, openssl::symm::Cipher::aes_128_cfb128, openssl::symm::Cipher::aes_128_cfb8, openssl::cipher::Cipher::aes_128_cfb1, openssl::cipher::Cipher::aes_128_cfb128, openssl::cipher::Cipher::aes_128_cfb8]
+    category: symmetric
+    algorithm: AES-128-CFB
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-ctr
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_ctr, openssl::cipher::Cipher::aes_128_ctr]
+    category: symmetric
+    algorithm: AES-128-CTR
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-ecb
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_ecb, openssl::cipher::Cipher::aes_128_ecb]
+    category: symmetric
+    algorithm: AES-128-ECB
+    status: needs-review
+    note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM."
+  - id: openssl-rs-aes-128-gcm
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_gcm, openssl::cipher::Cipher::aes_128_gcm]
+    category: symmetric
+    algorithm: AES-128-GCM
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-kw
+    functions: []
+    names: [openssl::cipher::Cipher::aes_128_wrap]
+    category: symmetric
+    algorithm: AES-128-KW
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-kwp
+    functions: []
+    names: [openssl::cipher::Cipher::aes_128_wrap_pad]
+    category: symmetric
+    algorithm: AES-128-KWP
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-ocb
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_ocb, openssl::cipher::Cipher::aes_128_ocb]
+    category: symmetric
+    algorithm: AES-128-OCB
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-ofb
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_ofb, openssl::cipher::Cipher::aes_128_ofb]
+    category: symmetric
+    algorithm: AES-128-OFB
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-128-xts
+    functions: []
+    names: [openssl::symm::Cipher::aes_128_xts, openssl::cipher::Cipher::aes_128_xts]
+    category: symmetric
+    algorithm: AES-128-XTS
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: openssl-rs-aes-192-cbc
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_cbc, openssl::cipher::Cipher::aes_192_cbc]
+    category: symmetric
+    algorithm: AES-192-CBC
+    status: observed-resistant
+  - id: openssl-rs-aes-192-ccm
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_ccm, openssl::cipher::Cipher::aes_192_ccm]
+    category: symmetric
+    algorithm: AES-192-CCM
+    status: observed-resistant
+  - id: openssl-rs-aes-192-cfb
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_cfb1, openssl::symm::Cipher::aes_192_cfb128, openssl::symm::Cipher::aes_192_cfb8, openssl::cipher::Cipher::aes_192_cfb1, openssl::cipher::Cipher::aes_192_cfb128, openssl::cipher::Cipher::aes_192_cfb8]
+    category: symmetric
+    algorithm: AES-192-CFB
+    status: observed-resistant
+  - id: openssl-rs-aes-192-ctr
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_ctr, openssl::cipher::Cipher::aes_192_ctr]
+    category: symmetric
+    algorithm: AES-192-CTR
+    status: observed-resistant
+  - id: openssl-rs-aes-192-ecb
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_ecb, openssl::cipher::Cipher::aes_192_ecb]
+    category: symmetric
+    algorithm: AES-192-ECB
+    status: needs-review
+    note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM."
+  - id: openssl-rs-aes-192-gcm
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_gcm, openssl::cipher::Cipher::aes_192_gcm]
+    category: symmetric
+    algorithm: AES-192-GCM
+    status: observed-resistant
+  - id: openssl-rs-aes-192-kw
+    functions: []
+    names: [openssl::cipher::Cipher::aes_192_wrap]
+    category: symmetric
+    algorithm: AES-192-KW
+    status: observed-resistant
+  - id: openssl-rs-aes-192-kwp
+    functions: []
+    names: [openssl::cipher::Cipher::aes_192_wrap_pad]
+    category: symmetric
+    algorithm: AES-192-KWP
+    status: observed-resistant
+  - id: openssl-rs-aes-192-ocb
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_ocb, openssl::cipher::Cipher::aes_192_ocb]
+    category: symmetric
+    algorithm: AES-192-OCB
+    status: observed-resistant
+  - id: openssl-rs-aes-192-ofb
+    functions: []
+    names: [openssl::symm::Cipher::aes_192_ofb, openssl::cipher::Cipher::aes_192_ofb]
+    category: symmetric
+    algorithm: AES-192-OFB
+    status: observed-resistant
+  - id: openssl-rs-aes-256-cbc
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_cbc, openssl::cipher::Cipher::aes_256_cbc]
+    category: symmetric
+    algorithm: AES-256-CBC
+    status: observed-resistant
+  - id: openssl-rs-aes-256-ccm
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_ccm, openssl::cipher::Cipher::aes_256_ccm]
+    category: symmetric
+    algorithm: AES-256-CCM
+    status: observed-resistant
+  - id: openssl-rs-aes-256-cfb
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_cfb1, openssl::symm::Cipher::aes_256_cfb128, openssl::symm::Cipher::aes_256_cfb8, openssl::cipher::Cipher::aes_256_cfb1, openssl::cipher::Cipher::aes_256_cfb128, openssl::cipher::Cipher::aes_256_cfb8]
+    category: symmetric
+    algorithm: AES-256-CFB
+    status: observed-resistant
+  - id: openssl-rs-aes-256-ctr
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_ctr, openssl::cipher::Cipher::aes_256_ctr]
+    category: symmetric
+    algorithm: AES-256-CTR
+    status: observed-resistant
+  - id: openssl-rs-aes-256-ecb
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_ecb, openssl::cipher::Cipher::aes_256_ecb]
+    category: symmetric
+    algorithm: AES-256-ECB
+    status: needs-review
+    note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM."
+  - id: openssl-rs-aes-256-gcm
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_gcm, openssl::cipher::Cipher::aes_256_gcm]
+    category: symmetric
+    algorithm: AES-256-GCM
+    status: observed-resistant
+  - id: openssl-rs-aes-256-kw
+    functions: []
+    names: [openssl::cipher::Cipher::aes_256_wrap]
+    category: symmetric
+    algorithm: AES-256-KW
+    status: observed-resistant
+  - id: openssl-rs-aes-256-kwp
+    functions: []
+    names: [openssl::cipher::Cipher::aes_256_wrap_pad]
+    category: symmetric
+    algorithm: AES-256-KWP
+    status: observed-resistant
+  - id: openssl-rs-aes-256-ocb
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_ocb, openssl::cipher::Cipher::aes_256_ocb]
+    category: symmetric
+    algorithm: AES-256-OCB
+    status: observed-resistant
+  - id: openssl-rs-aes-256-ofb
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_ofb, openssl::cipher::Cipher::aes_256_ofb]
+    category: symmetric
+    algorithm: AES-256-OFB
+    status: observed-resistant
+  - id: openssl-rs-aes-256-xts
+    functions: []
+    names: [openssl::symm::Cipher::aes_256_xts, openssl::cipher::Cipher::aes_256_xts]
+    category: symmetric
+    algorithm: AES-256-XTS
+    status: observed-resistant
+  - id: openssl-rs-blowfish
+    functions: []
+    names: [openssl::symm::Cipher::bf_cbc, openssl::symm::Cipher::bf_ecb, openssl::symm::Cipher::bf_cfb64, openssl::symm::Cipher::bf_ofb, openssl::cipher::Cipher::bf_cbc, openssl::cipher::Cipher::bf_ecb, openssl::cipher::Cipher::bf_cfb64, openssl::cipher::Cipher::bf_ofb]
+    category: symmetric
+    algorithm: Blowfish
+    status: needs-review
+    note: "64-bit blocks; replace with AES."
+  - id: openssl-rs-chacha20
+    functions: []
+    names: [openssl::symm::Cipher::chacha20, openssl::cipher::Cipher::chacha20]
+    category: symmetric
+    algorithm: ChaCha20
+    status: observed-resistant
+  - id: openssl-rs-chacha20-poly1305
+    functions: []
+    names: [openssl::symm::Cipher::chacha20_poly1305, openssl::cipher::Cipher::chacha20_poly1305]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: openssl-rs-des
+    functions: []
+    names: [openssl::symm::Cipher::des_cbc, openssl::symm::Cipher::des_ecb, openssl::cipher::Cipher::des_cbc, openssl::cipher::Cipher::des_ecb]
+    category: symmetric
+    algorithm: DES
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: openssl-rs-rc4
+    functions: []
+    names: [openssl::symm::Cipher::rc4, openssl::cipher::Cipher::rc4]
+    category: symmetric
+    algorithm: RC4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: openssl-rs-rsa
+    functions: []
+    names: [openssl::rsa, openssl::pkey::Id::RSA]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rs-rsa-pss
+    functions: []
+    names: [openssl::pkey::Id::RSA_PSS]
+    category: signature
+    algorithm: RSA-PSS
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-rs-dsa
+    functions: []
+    names: [openssl::dsa, openssl::pkey::Id::DSA]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-rs-dh
+    functions: []
+    names: [openssl::dh, openssl::pkey::Id::DH, openssl::pkey::Id::DHX]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rs-ecdsa
+    functions: []
+    names: [openssl::ecdsa]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-rs-ec
+    functions: []
+    names: [openssl::ec, openssl::pkey::Id::EC]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+    note: "Every curve OpenSSL offers is a classical elliptic curve. A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rs-sm2
+    functions: []
+    names: [openssl::pkey::Id::SM2]
+    category: keygen
+    algorithm: SM2
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rs-ed25519
+    functions: []
+    names: [openssl::pkey::PKey::generate_ed25519, openssl::pkey::Id::ED25519]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-rs-ed448
+    functions: []
+    names: [openssl::pkey::PKey::generate_ed448, openssl::pkey::Id::ED448]
+    category: signature
+    algorithm: Ed448
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: openssl-rs-x25519
+    functions: []
+    names: [openssl::pkey::PKey::generate_x25519, openssl::pkey::Id::X25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rs-x448
+    functions: []
+    names: [openssl::pkey::PKey::generate_x448, openssl::pkey::Id::X448]
+    category: key-exchange
+    algorithm: X448
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: openssl-rs-random
+    functions: []
+    names: [openssl::rand::rand_bytes, openssl::rand::rand_priv_bytes]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
+  - id: openssl-rs-tls
+    functions: []
+    names: [openssl::ssl::SslConnector, openssl::ssl::SslAcceptor, openssl::ssl::SslContext]
+    category: key-exchange
+    status: unresolved
+    note: "TLS key exchange: OpenSSL 3.5 and later prefer the hybrid post-quantum group X25519MLKEM768 by default; earlier versions use classical groups only. Check the OpenSSL version and any groups set with set_groups_list."
+  - id: openssl-rs-digest-by-name
+    functions: [openssl::hash::MessageDigest::from_name]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values: &digests
+      "sha1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "sha-1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "sha224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha-224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha2-224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha256": { algorithm: SHA-256, status: observed-resistant }
+      "sha-256": { algorithm: SHA-256, status: observed-resistant }
+      "sha2-256": { algorithm: SHA-256, status: observed-resistant }
+      "sha384": { algorithm: SHA-384, status: observed-resistant }
+      "sha-384": { algorithm: SHA-384, status: observed-resistant }
+      "sha2-384": { algorithm: SHA-384, status: observed-resistant }
+      "sha512": { algorithm: SHA-512, status: observed-resistant }
+      "sha-512": { algorithm: SHA-512, status: observed-resistant }
+      "sha2-512": { algorithm: SHA-512, status: observed-resistant }
+      "sha512-256": { algorithm: SHA-512/256, status: observed-resistant }
+      "sha-512/256": { algorithm: SHA-512/256, status: observed-resistant }
+      "sha2-512/256": { algorithm: SHA-512/256, status: observed-resistant }
+      "sha3-224": { algorithm: SHA3-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha3-256": { algorithm: SHA3-256, status: observed-resistant }
+      "sha3-384": { algorithm: SHA3-384, status: observed-resistant }
+      "sha3-512": { algorithm: SHA3-512, status: observed-resistant }
+      "shake128": { algorithm: SHAKE128, status: needs-review, note: "128-bit security level; a quantum computer reduces its margin. Review migration policy." }
+      "shake-128": { algorithm: SHAKE128, status: needs-review, note: "128-bit security level; a quantum computer reduces its margin. Review migration policy." }
+      "shake256": { algorithm: SHAKE256, status: observed-resistant }
+      "shake-256": { algorithm: SHAKE256, status: observed-resistant }
+      "ripemd160": { algorithm: RIPEMD-160, status: needs-review, note: "An old 160-bit hash; replace with SHA-256 or stronger." }
+      "ripemd-160": { algorithm: RIPEMD-160, status: needs-review, note: "An old 160-bit hash; replace with SHA-256 or stronger." }
+      "sm3": { algorithm: SM3, status: observed-resistant }
+  - id: openssl-rs-md-fetch
+    functions: [openssl::md::Md::fetch]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *digests

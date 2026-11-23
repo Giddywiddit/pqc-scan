@@ -3,12 +3,13 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
-import { scan } from '../src/core/scan.ts';
+import { loadLanguages, scan } from '../src/core/scan.ts';
 
 const root = new URL('..', import.meta.url).pathname;
 const fixture = (name: string) => join(root, 'test/fixtures', name);
+beforeAll(() => loadLanguages());
 const cli = (...args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8' });
 
 describe('filesystem scanning', () => {
@@ -30,6 +31,17 @@ describe('filesystem scanning', () => {
     writeFileSync(join(dir, 'notes.md'), code);
     writeFileSync(join(dir, 'real.ts'), code);
     expect(scan(dir, loadRules()).map((item) => item.file)).toEqual(['real.ts']);
+  });
+
+  it("skips a Rust project's target folder, but not a folder named target elsewhere", () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pqc-target-'));
+    const code = 'fn f() { let h = sha2::Sha256::new(); }\n';
+    writeFileSync(join(dir, 'Cargo.toml'), '[package]\nname = "x"\n');
+    for (const folder of ['target/debug/build/x/out', 'src', 'tools/target']) {
+      mkdirSync(join(dir, folder), { recursive: true });
+      writeFileSync(join(dir, folder, 'a.rs'), code);
+    }
+    expect(scan(dir, loadRules()).map((item) => item.file).sort()).toEqual([join('src', 'a.rs'), join('tools', 'target', 'a.rs')]);
   });
 
   it('flags importers of a wrapper whose algorithm is decided by its callers, across extensions and re-exports', () => {

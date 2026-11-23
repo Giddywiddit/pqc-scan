@@ -15,7 +15,7 @@ npm run typecheck   # check the TypeScript code for type errors
 
 ## Adding a library
 
-1. Add `rules/<language>/<library>.yaml`. Rule files are plain text and need no programming: each rule lists function names, and either a fixed algorithm and status or the argument that holds the algorithm and a table of its values. A C++ rule can also list `types`, whose every use counts; C++ names are written relative to the namespace given in `module`. Check every name against the library's own header files or documentation.
+1. Add `rules/<language>/<library>.yaml`. Rule files are plain text and need no programming: each rule lists function names, and either a fixed algorithm and status or the argument that holds the algorithm and a table of its values. A rule can also list `names`, whose every use counts, called or not: C++ type names, written relative to the namespace given in `module`, or Rust paths written from the crate (`sha2::Sha256`). Check every name against the library's own header files or documentation.
 2. Add a short example file to `test/fixtures/<language>/` with an `expect:` comment on each line that should produce a finding.
 3. Add the library to `rules/<language>/README.md`.
 
@@ -25,7 +25,7 @@ npm run typecheck   # check the TypeScript code for type errors
 
 1. Write an adapter in `src/languages/<name>/adapter.ts` that implements `LanguageAdapter` (`src/core/language.ts`), and register it in `src/languages/index.ts`. If the language calls another language's libraries, as C++ calls C's, list that language in `alsoUsesRulesOf`. A tree-sitter grammar is loaded with `createParser('<name>')` from `src/core/tree-sitter.ts`; add the official `tree-sitter-<name>` package, pinned to an exact version.
 2. Add `rules/<name>/` with at least one rule file and a `README.md`.
-3. Tell `test/rule-coverage.test.ts` how a call is written in the new language (one line in `callIn`, one in `valueIn` if values are written differently from a quoted string, and one in `declareIn` if its rules list types).
+3. Tell `test/rule-coverage.test.ts` how a call is written in the new language (one line in `callIn`, one in `valueIn` if values are written differently from a quoted string, and one in `declareIn` if its rules list `names`).
 4. Add marked example files in `test/fixtures/<name>/`; the fixture test finds the folder on its own.
 5. Add a command-line test like the C one in `test/integration.test.ts`.
 6. Add one line for the language to the table in the main `README.md`.

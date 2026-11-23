@@ -1,0 +1,499 @@
+# RustCrypto crates (github.com/RustCrypto), plus the dalek crates for Ed25519 and X25519. Names are paths from the
+# crate root, as written in Rust with underscores (the md-5 crate is `md5`). A name covers every path below it, so a crate
+# that holds a single algorithm is listed by its root (`rsa` covers `rsa::RsaPrivateKey` and `rsa::pkcs1v15::SigningKey`).
+# HMAC, HKDF and PBKDF2 take the hash as a type argument (`Hmac<Sha256>`), which is reported on its own.
+module: [sha1, sha2, sha3, md5, md4, blake2, ripemd, aes, aes_gcm, aes_gcm_siv, chacha20poly1305, chacha20, des, rc4, rsa, dsa, ecdsa, p256, p384, p521, k256, sm2, ed25519, ed25519_dalek, x25519_dalek, ed448, ed448_goldilocks, x448, ml_kem, ml_dsa, slh_dsa, x_wing, argon2, scrypt]
+rules:
+  - id: rustcrypto-sha256
+    functions: []
+    names: [sha2::Sha256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: rustcrypto-sha384
+    functions: []
+    names: [sha2::Sha384]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: rustcrypto-sha512
+    functions: []
+    names: [sha2::Sha512]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: rustcrypto-sha512-256
+    functions: []
+    names: [sha2::Sha512_256]
+    category: hash
+    algorithm: SHA-512/256
+    status: observed-resistant
+  - id: rustcrypto-sha224
+    functions: []
+    names: [sha2::Sha224, sha2::Sha512_224]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: rustcrypto-sha3-256
+    functions: []
+    names: [sha3::Sha3_256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: rustcrypto-sha3-384
+    functions: []
+    names: [sha3::Sha3_384]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: rustcrypto-sha3-512
+    functions: []
+    names: [sha3::Sha3_512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: rustcrypto-sha3-224
+    functions: []
+    names: [sha3::Sha3_224]
+    category: hash
+    algorithm: SHA3-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: rustcrypto-keccak256
+    functions: []
+    names: [sha3::Keccak256, sha3::Keccak384, sha3::Keccak512]
+    category: hash
+    algorithm: Keccak
+    status: observed-resistant
+    note: "The original Keccak, which differs from SHA-3 only in padding (used by Ethereum)."
+  - id: rustcrypto-keccak224
+    functions: []
+    names: [sha3::Keccak224]
+    category: hash
+    algorithm: Keccak-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: rustcrypto-shake256
+    functions: []
+    names: [sha3::Shake256]
+    category: hash
+    algorithm: SHAKE256
+    status: observed-resistant
+  - id: rustcrypto-shake128
+    functions: []
+    names: [sha3::Shake128]
+    category: hash
+    algorithm: SHAKE128
+    status: needs-review
+    note: "128-bit security level; a quantum computer reduces its margin. Review migration policy."
+  - id: rustcrypto-sha1
+    functions: []
+    names: [sha1]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: rustcrypto-md5
+    functions: []
+    names: [md5]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: rustcrypto-md4
+    functions: []
+    names: [md4]
+    category: hash
+    algorithm: MD4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: rustcrypto-ripemd160
+    functions: []
+    names: [ripemd::Ripemd160]
+    category: hash
+    algorithm: RIPEMD-160
+    status: needs-review
+    note: "An old 160-bit hash; replace with SHA-256 or stronger."
+  - id: rustcrypto-blake2b
+    functions: []
+    names: [blake2::Blake2b, blake2::Blake2b512, blake2::Blake2bVar, blake2::Blake2bMac, blake2::Blake2bMac512]
+    category: hash
+    algorithm: BLAKE2b
+    status: observed-resistant
+  - id: rustcrypto-blake2s
+    functions: []
+    names: [blake2::Blake2s, blake2::Blake2s256, blake2::Blake2sVar, blake2::Blake2sMac, blake2::Blake2sMac256]
+    category: hash
+    algorithm: BLAKE2s
+    status: observed-resistant
+  - id: rustcrypto-aes-256
+    functions: []
+    names: [aes::Aes256, aes::Aes256Enc, aes::Aes256Dec]
+    category: symmetric
+    algorithm: AES-256
+    status: observed-resistant
+  - id: rustcrypto-aes-192
+    functions: []
+    names: [aes::Aes192, aes::Aes192Enc, aes::Aes192Dec]
+    category: symmetric
+    algorithm: AES-192
+    status: observed-resistant
+  - id: rustcrypto-aes-128
+    functions: []
+    names: [aes::Aes128, aes::Aes128Enc, aes::Aes128Dec]
+    category: symmetric
+    algorithm: AES-128
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: rustcrypto-aes-256-gcm
+    functions: []
+    names: [aes_gcm::Aes256Gcm]
+    category: symmetric
+    algorithm: AES-256-GCM
+    status: observed-resistant
+  - id: rustcrypto-aes-128-gcm
+    functions: []
+    names: [aes_gcm::Aes128Gcm]
+    category: symmetric
+    algorithm: AES-128-GCM
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: rustcrypto-aes-gcm
+    functions: []
+    names: [aes_gcm::AesGcm]
+    category: symmetric
+    algorithm: AES-GCM
+    status: unresolved
+    note: "The AES key size is the first type argument (AesGcm<Aes256, ...>); 128-bit needs review, 192 and 256 are fine."
+  - id: rustcrypto-aes-256-gcm-siv
+    functions: []
+    names: [aes_gcm_siv::Aes256GcmSiv]
+    category: symmetric
+    algorithm: AES-256-GCM-SIV
+    status: observed-resistant
+  - id: rustcrypto-aes-128-gcm-siv
+    functions: []
+    names: [aes_gcm_siv::Aes128GcmSiv]
+    category: symmetric
+    algorithm: AES-128-GCM-SIV
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: rustcrypto-chacha20-poly1305
+    functions: []
+    names: [chacha20poly1305::ChaCha20Poly1305, chacha20poly1305::XChaCha20Poly1305]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: rustcrypto-chacha20
+    functions: []
+    names: [chacha20::ChaCha20, chacha20::XChaCha20, chacha20::ChaCha20Legacy]
+    category: symmetric
+    algorithm: ChaCha20
+    status: observed-resistant
+  - id: rustcrypto-des
+    functions: []
+    names: [des::Des]
+    category: symmetric
+    algorithm: DES
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: rustcrypto-3des
+    functions: []
+    names: [des::TdesEde2, des::TdesEde3, des::TdesEee2, des::TdesEee3]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: rustcrypto-rc4
+    functions: []
+    names: [rc4]
+    category: symmetric
+    algorithm: RC4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: rustcrypto-rsa
+    functions: []
+    names: [rsa]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-dsa
+    functions: []
+    names: [dsa]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-ecdsa
+    functions: []
+    names: [ecdsa]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-ecdsa-p256
+    functions: []
+    names: [p256::ecdsa]
+    category: signature
+    algorithm: ECDSA-P-256
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-ecdh-p256
+    functions: []
+    names: [p256::ecdh]
+    category: key-exchange
+    algorithm: ECDH-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ec-p256
+    functions: []
+    names: [p256]
+    category: keygen
+    algorithm: EC-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ecdsa-p384
+    functions: []
+    names: [p384::ecdsa]
+    category: signature
+    algorithm: ECDSA-P-384
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-ecdh-p384
+    functions: []
+    names: [p384::ecdh]
+    category: key-exchange
+    algorithm: ECDH-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ec-p384
+    functions: []
+    names: [p384]
+    category: keygen
+    algorithm: EC-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ecdsa-p521
+    functions: []
+    names: [p521::ecdsa]
+    category: signature
+    algorithm: ECDSA-P-521
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-ecdh-p521
+    functions: []
+    names: [p521::ecdh]
+    category: key-exchange
+    algorithm: ECDH-P-521
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ec-p521
+    functions: []
+    names: [p521]
+    category: keygen
+    algorithm: EC-P-521
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ecdsa-secp256k1
+    functions: []
+    names: [k256::ecdsa, k256::schnorr]
+    category: signature
+    algorithm: ECDSA-secp256k1
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-ecdh-secp256k1
+    functions: []
+    names: [k256::ecdh]
+    category: key-exchange
+    algorithm: ECDH-secp256k1
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ec-secp256k1
+    functions: []
+    names: [k256]
+    category: keygen
+    algorithm: EC-secp256k1
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-sm2
+    functions: []
+    names: [sm2]
+    category: keygen
+    algorithm: SM2
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ed25519
+    functions: []
+    names: [ed25519, ed25519_dalek]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-x25519
+    functions: []
+    names: [x25519_dalek]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ed448
+    functions: []
+    names: [ed448, ed448_goldilocks]
+    category: signature
+    algorithm: Ed448
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: rustcrypto-x448
+    functions: []
+    names: [x448]
+    category: key-exchange
+    algorithm: X448
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: rustcrypto-ml-kem-512
+    functions: []
+    names: [ml_kem::MlKem512, ml_kem::ml_kem_512, ml_kem::DecapsulationKey512, ml_kem::EncapsulationKey512]
+    category: key-exchange
+    algorithm: ML-KEM-512
+    status: observed-resistant
+  - id: rustcrypto-ml-kem-768
+    functions: []
+    names: [ml_kem::MlKem768, ml_kem::ml_kem_768, ml_kem::DecapsulationKey768, ml_kem::EncapsulationKey768]
+    category: key-exchange
+    algorithm: ML-KEM-768
+    status: observed-resistant
+  - id: rustcrypto-ml-kem-1024
+    functions: []
+    names: [ml_kem::MlKem1024, ml_kem::ml_kem_1024, ml_kem::DecapsulationKey1024, ml_kem::EncapsulationKey1024]
+    category: key-exchange
+    algorithm: ML-KEM-1024
+    status: observed-resistant
+  - id: rustcrypto-ml-kem
+    functions: []
+    names: [ml_kem]
+    category: key-exchange
+    algorithm: ML-KEM
+    status: observed-resistant
+  - id: rustcrypto-ml-dsa-44
+    functions: []
+    names: [ml_dsa::MlDsa44]
+    category: signature
+    algorithm: ML-DSA-44
+    status: observed-resistant
+  - id: rustcrypto-ml-dsa-65
+    functions: []
+    names: [ml_dsa::MlDsa65]
+    category: signature
+    algorithm: ML-DSA-65
+    status: observed-resistant
+  - id: rustcrypto-ml-dsa-87
+    functions: []
+    names: [ml_dsa::MlDsa87]
+    category: signature
+    algorithm: ML-DSA-87
+    status: observed-resistant
+  - id: rustcrypto-ml-dsa
+    functions: []
+    names: [ml_dsa]
+    category: signature
+    algorithm: ML-DSA
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-sha2-128s
+    functions: []
+    names: [slh_dsa::Sha2_128s]
+    category: signature
+    algorithm: SLH-DSA-SHA2-128s
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-sha2-128f
+    functions: []
+    names: [slh_dsa::Sha2_128f]
+    category: signature
+    algorithm: SLH-DSA-SHA2-128f
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-sha2-192s
+    functions: []
+    names: [slh_dsa::Sha2_192s]
+    category: signature
+    algorithm: SLH-DSA-SHA2-192s
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-sha2-192f
+    functions: []
+    names: [slh_dsa::Sha2_192f]
+    category: signature
+    algorithm: SLH-DSA-SHA2-192f
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-sha2-256s
+    functions: []
+    names: [slh_dsa::Sha2_256s]
+    category: signature
+    algorithm: SLH-DSA-SHA2-256s
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-sha2-256f
+    functions: []
+    names: [slh_dsa::Sha2_256f]
+    category: signature
+    algorithm: SLH-DSA-SHA2-256f
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-shake-128s
+    functions: []
+    names: [slh_dsa::Shake128s]
+    category: signature
+    algorithm: SLH-DSA-SHAKE-128s
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-shake-128f
+    functions: []
+    names: [slh_dsa::Shake128f]
+    category: signature
+    algorithm: SLH-DSA-SHAKE-128f
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-shake-192s
+    functions: []
+    names: [slh_dsa::Shake192s]
+    category: signature
+    algorithm: SLH-DSA-SHAKE-192s
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-shake-192f
+    functions: []
+    names: [slh_dsa::Shake192f]
+    category: signature
+    algorithm: SLH-DSA-SHAKE-192f
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-shake-256s
+    functions: []
+    names: [slh_dsa::Shake256s]
+    category: signature
+    algorithm: SLH-DSA-SHAKE-256s
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa-shake-256f
+    functions: []
+    names: [slh_dsa::Shake256f]
+    category: signature
+    algorithm: SLH-DSA-SHAKE-256f
+    status: observed-resistant
+  - id: rustcrypto-slh-dsa
+    functions: []
+    names: [slh_dsa]
+    category: signature
+    algorithm: SLH-DSA
+    status: observed-resistant
+  - id: rustcrypto-x-wing
+    functions: []
+    names: [x_wing]
+    category: key-exchange
+    algorithm: X-Wing
+    status: observed-resistant
+    note: "X-Wing combines ML-KEM-768 with X25519; it stays secure if either part holds."
+  - id: rustcrypto-argon2
+    functions: []
+    names: [argon2]
+    category: hash
+    algorithm: Argon2
+    status: observed-resistant
+  - id: rustcrypto-scrypt
+    functions: []
+    names: [scrypt]
+    category: hash
+    algorithm: scrypt
+    status: observed-resistant

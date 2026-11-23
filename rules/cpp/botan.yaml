@@ -96,156 +96,156 @@ rules:
       "classicmceliece": { algorithm: Classic McEliece, status: needs-review, note: "Believed to resist quantum computers, but not a NIST standard. Check it is allowed by your policy." }
   - id: botan-rsa
     functions: []
-    types: [RSA_PrivateKey, RSA_PublicKey]
+    names: [RSA_PrivateKey, RSA_PublicKey]
     category: keygen
     algorithm: RSA
     status: vulnerable
     note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
   - id: botan-ecdsa
     functions: []
-    types: [ECDSA_PrivateKey, ECDSA_PublicKey, ECGDSA_PrivateKey, ECKCDSA_PrivateKey]
+    names: [ECDSA_PrivateKey, ECDSA_PublicKey, ECGDSA_PrivateKey, ECKCDSA_PrivateKey]
     category: signature
     algorithm: ECDSA
     status: vulnerable
     note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
   - id: botan-ecdh
     functions: []
-    types: [ECDH_PrivateKey, ECDH_PublicKey]
+    names: [ECDH_PrivateKey, ECDH_PublicKey]
     category: key-exchange
     algorithm: ECDH
     status: vulnerable
     note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
   - id: botan-ed25519
     functions: []
-    types: [Ed25519_PrivateKey, Ed25519_PublicKey]
+    names: [Ed25519_PrivateKey, Ed25519_PublicKey]
     category: signature
     algorithm: Ed25519
     status: vulnerable
     note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
   - id: botan-ed448
     functions: []
-    types: [Ed448_PrivateKey, Ed448_PublicKey]
+    names: [Ed448_PrivateKey, Ed448_PublicKey]
     category: signature
     algorithm: Ed448
     status: vulnerable
     note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
   - id: botan-x25519
     functions: []
-    types: [X25519_PrivateKey, X25519_PublicKey]
+    names: [X25519_PrivateKey, X25519_PublicKey]
     category: key-exchange
     algorithm: X25519
     status: vulnerable
     note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
   - id: botan-x448
     functions: []
-    types: [X448_PrivateKey, X448_PublicKey]
+    names: [X448_PrivateKey, X448_PublicKey]
     category: key-exchange
     algorithm: X448
     status: vulnerable
     note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
   - id: botan-dh
     functions: []
-    types: [DH_PrivateKey, DH_PublicKey]
+    names: [DH_PrivateKey, DH_PublicKey]
     category: key-exchange
     algorithm: DH
     status: vulnerable
     note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
   - id: botan-dsa
     functions: []
-    types: [DSA_PrivateKey, DSA_PublicKey]
+    names: [DSA_PrivateKey, DSA_PublicKey]
     category: signature
     algorithm: DSA
     status: vulnerable
     note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
   - id: botan-elgamal
     functions: []
-    types: [ElGamal_PrivateKey, ElGamal_PublicKey]
+    names: [ElGamal_PrivateKey, ElGamal_PublicKey]
     category: encryption
     algorithm: ElGamal
     status: vulnerable
     note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
   - id: botan-sm2
     functions: []
-    types: [SM2_PrivateKey, SM2_PublicKey]
+    names: [SM2_PrivateKey, SM2_PublicKey]
     category: signature
     algorithm: SM2
     status: vulnerable
     note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
   - id: botan-gost
     functions: []
-    types: [GOST_3410_PrivateKey]
+    names: [GOST_3410_PrivateKey]
     category: signature
     algorithm: GOST R 34.10
     status: vulnerable
     note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
   - id: botan-ml-kem
     functions: []
-    types: [ML_KEM_PrivateKey, ML_KEM_PublicKey]
+    names: [ML_KEM_PrivateKey, ML_KEM_PublicKey]
     category: key-exchange
     algorithm: ML-KEM
     status: observed-resistant
   - id: botan-ml-dsa
     functions: []
-    types: [ML_DSA_PrivateKey, ML_DSA_PublicKey]
+    names: [ML_DSA_PrivateKey, ML_DSA_PublicKey]
     category: signature
     algorithm: ML-DSA
     status: observed-resistant
   - id: botan-slh-dsa
     functions: []
-    types: [SLH_DSA_PrivateKey, SLH_DSA_PublicKey]
+    names: [SLH_DSA_PrivateKey, SLH_DSA_PublicKey]
     category: signature
     algorithm: SLH-DSA
     status: observed-resistant
   - id: botan-kyber
     functions: []
-    types: [Kyber_PrivateKey, Kyber_PublicKey]
+    names: [Kyber_PrivateKey, Kyber_PublicKey]
     category: key-exchange
     algorithm: ML-KEM or Kyber
     status: needs-review
     note: "In Botan this class holds ML-KEM or the older pre-standard Kyber, depending on its mode. Both are believed to resist quantum computers, but only ML-KEM is the NIST standard. Check the mode."
   - id: botan-dilithium
     functions: []
-    types: [Dilithium_PrivateKey, Dilithium_PublicKey]
+    names: [Dilithium_PrivateKey, Dilithium_PublicKey]
     category: signature
     algorithm: ML-DSA or Dilithium
     status: needs-review
     note: "In Botan this class holds ML-DSA or the older pre-standard Dilithium, depending on its mode. Both are believed to resist quantum computers, but only ML-DSA is the NIST standard. Check the mode."
   - id: botan-sphincsplus
     functions: []
-    types: [SphincsPlus_PrivateKey, SphincsPlus_PublicKey]
+    names: [SphincsPlus_PrivateKey, SphincsPlus_PublicKey]
     category: signature
     algorithm: SLH-DSA or SPHINCS+
     status: needs-review
     note: "In Botan this class holds SLH-DSA or the older pre-standard SPHINCS+, depending on its parameters. Both are believed to resist quantum computers, but only SLH-DSA is the NIST standard. Check the parameters."
   - id: botan-frodokem
     functions: []
-    types: [FrodoKEM_PrivateKey, FrodoKEM_PublicKey, Classic_McEliece_PrivateKey, Classic_McEliece_PublicKey]
+    names: [FrodoKEM_PrivateKey, FrodoKEM_PublicKey, Classic_McEliece_PrivateKey, Classic_McEliece_PublicKey]
     category: key-exchange
     algorithm: FrodoKEM or Classic McEliece
     status: needs-review
     note: "Believed to resist quantum computers, but not a NIST standard. Check it is allowed by your policy."
   - id: botan-stateful-hash-signature
     functions: []
-    types: [XMSS_PrivateKey, XMSS_PublicKey, HSS_LMS_PrivateKey, HSS_LMS_PublicKey]
+    names: [XMSS_PrivateKey, XMSS_PublicKey, HSS_LMS_PrivateKey, HSS_LMS_PublicKey]
     category: signature
     algorithm: XMSS or HSS/LMS
     status: observed-resistant
     note: "Hash-based signatures approved by NIST (SP 800-208). Each private key can sign only a fixed number of times."
   - id: botan-pk-operation
     functions: []
-    types: [PK_Signer, PK_Verifier, PK_Encryptor_EME, PK_Decryptor_EME, PK_KEM_Encryptor, PK_KEM_Decryptor, PK_Key_Agreement]
+    names: [PK_Signer, PK_Verifier, PK_Encryptor_EME, PK_Decryptor_EME, PK_KEM_Encryptor, PK_KEM_Decryptor, PK_Key_Agreement]
     category: unknown
     status: unresolved
     note: "Asymmetric operation; the key type is set where the key is created or loaded, which may be elsewhere."
   - id: botan-random
     functions: []
-    types: [AutoSeeded_RNG, System_RNG]
+    names: [AutoSeeded_RNG, System_RNG]
     category: random
     algorithm: CSPRNG
     status: observed-resistant
   - id: botan-tls
     functions: []
-    types: [TLS::Client, TLS::Server]
+    names: [TLS::Client, TLS::Server]
     category: key-exchange
     status: unresolved
     note: "TLS key exchange: since Botan 3.7 the default policy allows the hybrid post-quantum group x25519/ML-KEM-768, but a client first offers only a classical key share. Check the Botan version and the policy's key_exchange_groups()."

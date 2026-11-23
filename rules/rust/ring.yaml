@@ -1,0 +1,348 @@
+# ring, and aws-lc-rs, which copies ring's interface. Names are written once for ring: `aws_lc_rs::digest::SHA256` is read
+# as `ring::digest::SHA256` (see `mirrors`). What only aws-lc-rs has (ML-KEM, ML-DSA, SHA-3, P-521, ...) is written with
+# its own crate name. The algorithm is chosen by passing one of these constants, such as `&digest::SHA256`.
+module: [ring, aws_lc_rs]
+mirrors: { aws_lc_rs: ring }
+rules:
+  - id: ring-sha256
+    functions: []
+    names: [ring::digest::SHA256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: ring-sha384
+    functions: []
+    names: [ring::digest::SHA384]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: ring-sha512
+    functions: []
+    names: [ring::digest::SHA512]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: ring-sha512-256
+    functions: []
+    names: [ring::digest::SHA512_256]
+    category: hash
+    algorithm: SHA-512/256
+    status: observed-resistant
+  - id: ring-sha1
+    functions: []
+    names: [ring::digest::SHA1_FOR_LEGACY_USE_ONLY]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: aws-lc-rs-sha224
+    functions: []
+    names: [aws_lc_rs::digest::SHA224]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: aws-lc-rs-sha3-256
+    functions: []
+    names: [aws_lc_rs::digest::SHA3_256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: aws-lc-rs-sha3-384
+    functions: []
+    names: [aws_lc_rs::digest::SHA3_384]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: aws-lc-rs-sha3-512
+    functions: []
+    names: [aws_lc_rs::digest::SHA3_512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: aws-lc-rs-keccak256
+    functions: []
+    names: [aws_lc_rs::unstable::digest::KECCAK256]
+    category: hash
+    algorithm: Keccak
+    status: observed-resistant
+    note: "The original Keccak, which differs from SHA-3 only in padding (used by Ethereum)."
+  - id: ring-hmac-sha256
+    functions: []
+    names: [ring::hmac::HMAC_SHA256]
+    category: hash
+    algorithm: HMAC-SHA-256
+    status: observed-resistant
+  - id: ring-hmac-sha384
+    functions: []
+    names: [ring::hmac::HMAC_SHA384]
+    category: hash
+    algorithm: HMAC-SHA-384
+    status: observed-resistant
+  - id: ring-hmac-sha512
+    functions: []
+    names: [ring::hmac::HMAC_SHA512]
+    category: hash
+    algorithm: HMAC-SHA-512
+    status: observed-resistant
+  - id: ring-hmac-sha1
+    functions: []
+    names: [ring::hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY]
+    category: hash
+    algorithm: HMAC-SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: aws-lc-rs-hmac-sha224
+    functions: []
+    names: [aws_lc_rs::hmac::HMAC_SHA224]
+    category: hash
+    algorithm: HMAC-SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: ring-hkdf-sha256
+    functions: []
+    names: [ring::hkdf::HKDF_SHA256]
+    category: hash
+    algorithm: HKDF-SHA-256
+    status: observed-resistant
+  - id: ring-hkdf-sha384
+    functions: []
+    names: [ring::hkdf::HKDF_SHA384]
+    category: hash
+    algorithm: HKDF-SHA-384
+    status: observed-resistant
+  - id: ring-hkdf-sha512
+    functions: []
+    names: [ring::hkdf::HKDF_SHA512]
+    category: hash
+    algorithm: HKDF-SHA-512
+    status: observed-resistant
+  - id: ring-hkdf-sha1
+    functions: []
+    names: [ring::hkdf::HKDF_SHA1_FOR_LEGACY_USE_ONLY]
+    category: hash
+    algorithm: HKDF-SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: ring-pbkdf2-sha256
+    functions: []
+    names: [ring::pbkdf2::PBKDF2_HMAC_SHA256]
+    category: hash
+    algorithm: PBKDF2-HMAC-SHA-256
+    status: observed-resistant
+  - id: ring-pbkdf2-sha384
+    functions: []
+    names: [ring::pbkdf2::PBKDF2_HMAC_SHA384]
+    category: hash
+    algorithm: PBKDF2-HMAC-SHA-384
+    status: observed-resistant
+  - id: ring-pbkdf2-sha512
+    functions: []
+    names: [ring::pbkdf2::PBKDF2_HMAC_SHA512]
+    category: hash
+    algorithm: PBKDF2-HMAC-SHA-512
+    status: observed-resistant
+  - id: ring-pbkdf2-sha1
+    functions: []
+    names: [ring::pbkdf2::PBKDF2_HMAC_SHA1]
+    category: hash
+    algorithm: PBKDF2-HMAC-SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: ring-aes-256-gcm
+    functions: []
+    names: [ring::aead::AES_256_GCM]
+    category: symmetric
+    algorithm: AES-256-GCM
+    status: observed-resistant
+  - id: ring-aes-128-gcm
+    functions: []
+    names: [ring::aead::AES_128_GCM]
+    category: symmetric
+    algorithm: AES-128-GCM
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: ring-chacha20-poly1305
+    functions: []
+    names: [ring::aead::CHACHA20_POLY1305]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: aws-lc-rs-aes-192-gcm
+    functions: []
+    names: [aws_lc_rs::aead::AES_192_GCM]
+    category: symmetric
+    algorithm: AES-192-GCM
+    status: observed-resistant
+  - id: aws-lc-rs-aes-256-gcm-siv
+    functions: []
+    names: [aws_lc_rs::aead::AES_256_GCM_SIV]
+    category: symmetric
+    algorithm: AES-256-GCM-SIV
+    status: observed-resistant
+  - id: aws-lc-rs-aes-128-gcm-siv
+    functions: []
+    names: [aws_lc_rs::aead::AES_128_GCM_SIV]
+    category: symmetric
+    algorithm: AES-128-GCM-SIV
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: aws-lc-rs-aes-256
+    functions: []
+    names: [aws_lc_rs::cipher::AES_256]
+    category: symmetric
+    algorithm: AES-256
+    status: observed-resistant
+  - id: aws-lc-rs-aes-192
+    functions: []
+    names: [aws_lc_rs::cipher::AES_192]
+    category: symmetric
+    algorithm: AES-192
+    status: observed-resistant
+  - id: aws-lc-rs-aes-128
+    functions: []
+    names: [aws_lc_rs::cipher::AES_128]
+    category: symmetric
+    algorithm: AES-128
+    status: needs-review
+    note: "AES-128 has reduced quantum security margin; review migration policy."
+  - id: aws-lc-rs-des
+    functions: []
+    names: [aws_lc_rs::cipher::DES_FOR_LEGACY_USE_ONLY]
+    category: symmetric
+    algorithm: DES
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: aws-lc-rs-3des
+    functions: []
+    names: [aws_lc_rs::cipher::DES_EDE_FOR_LEGACY_USE_ONLY, aws_lc_rs::cipher::DES_EDE3_FOR_LEGACY_USE_ONLY]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: ring-x25519
+    functions: []
+    names: [ring::agreement::X25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: ring-ecdh-p256
+    functions: []
+    names: [ring::agreement::ECDH_P256]
+    category: key-exchange
+    algorithm: ECDH-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: ring-ecdh-p384
+    functions: []
+    names: [ring::agreement::ECDH_P384]
+    category: key-exchange
+    algorithm: ECDH-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: aws-lc-rs-ecdh-p521
+    functions: []
+    names: [aws_lc_rs::agreement::ECDH_P521]
+    category: key-exchange
+    algorithm: ECDH-P-521
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: aws-lc-rs-ml-kem-512
+    functions: []
+    names: [aws_lc_rs::kem::ML_KEM_512]
+    category: key-exchange
+    algorithm: ML-KEM-512
+    status: observed-resistant
+  - id: aws-lc-rs-ml-kem-768
+    functions: []
+    names: [aws_lc_rs::kem::ML_KEM_768]
+    category: key-exchange
+    algorithm: ML-KEM-768
+    status: observed-resistant
+  - id: aws-lc-rs-ml-kem-1024
+    functions: []
+    names: [aws_lc_rs::kem::ML_KEM_1024]
+    category: key-exchange
+    algorithm: ML-KEM-1024
+    status: observed-resistant
+  - id: aws-lc-rs-ml-dsa-44
+    functions: []
+    names: [aws_lc_rs::signature::ML_DSA_44, aws_lc_rs::signature::ML_DSA_44_SIGNING, aws_lc_rs::unstable::signature::ML_DSA_44, aws_lc_rs::unstable::signature::ML_DSA_44_SIGNING, aws_lc_rs::unstable::signature::MLDSA_44, aws_lc_rs::unstable::signature::MLDSA_44_SIGNING]
+    category: signature
+    algorithm: ML-DSA-44
+    status: observed-resistant
+  - id: aws-lc-rs-ml-dsa-65
+    functions: []
+    names: [aws_lc_rs::signature::ML_DSA_65, aws_lc_rs::signature::ML_DSA_65_SIGNING, aws_lc_rs::unstable::signature::ML_DSA_65, aws_lc_rs::unstable::signature::ML_DSA_65_SIGNING, aws_lc_rs::unstable::signature::MLDSA_65, aws_lc_rs::unstable::signature::MLDSA_65_SIGNING]
+    category: signature
+    algorithm: ML-DSA-65
+    status: observed-resistant
+  - id: aws-lc-rs-ml-dsa-87
+    functions: []
+    names: [aws_lc_rs::signature::ML_DSA_87, aws_lc_rs::signature::ML_DSA_87_SIGNING, aws_lc_rs::unstable::signature::ML_DSA_87, aws_lc_rs::unstable::signature::ML_DSA_87_SIGNING, aws_lc_rs::unstable::signature::MLDSA_87, aws_lc_rs::unstable::signature::MLDSA_87_SIGNING]
+    category: signature
+    algorithm: ML-DSA-87
+    status: observed-resistant
+  - id: ring-rsa
+    functions: []
+    names: [ring::signature::RSA_PKCS1_SHA256, ring::signature::RSA_PKCS1_SHA384, ring::signature::RSA_PKCS1_SHA512, ring::signature::RSA_PKCS1_1024_8192_SHA1_FOR_LEGACY_USE_ONLY, ring::signature::RSA_PKCS1_1024_8192_SHA256_FOR_LEGACY_USE_ONLY, ring::signature::RSA_PKCS1_1024_8192_SHA512_FOR_LEGACY_USE_ONLY, ring::signature::RSA_PKCS1_2048_8192_SHA1_FOR_LEGACY_USE_ONLY, ring::signature::RSA_PKCS1_2048_8192_SHA256, ring::signature::RSA_PKCS1_2048_8192_SHA384, ring::signature::RSA_PKCS1_2048_8192_SHA512, ring::signature::RSA_PKCS1_3072_8192_SHA384, ring::signature::RsaKeyPair, ring::rsa]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-rsa-pss
+    functions: []
+    names: [ring::signature::RSA_PSS_SHA256, ring::signature::RSA_PSS_SHA384, ring::signature::RSA_PSS_SHA512, ring::signature::RSA_PSS_2048_8192_SHA256, ring::signature::RSA_PSS_2048_8192_SHA384, ring::signature::RSA_PSS_2048_8192_SHA512]
+    category: signature
+    algorithm: RSA-PSS
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-ecdsa-p256
+    functions: []
+    names: [ring::signature::ECDSA_P256_SHA256_ASN1_SIGNING, ring::signature::ECDSA_P256_SHA256_FIXED_SIGNING, ring::signature::ECDSA_P256_SHA256_ASN1, ring::signature::ECDSA_P256_SHA256_FIXED, ring::signature::ECDSA_P256_SHA384_ASN1, aws_lc_rs::signature::ECDSA_P256_SHA1_ASN1, aws_lc_rs::signature::ECDSA_P256_SHA512_ASN1]
+    category: signature
+    algorithm: ECDSA-P-256
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-ecdsa-p384
+    functions: []
+    names: [ring::signature::ECDSA_P384_SHA384_ASN1_SIGNING, ring::signature::ECDSA_P384_SHA384_FIXED_SIGNING, ring::signature::ECDSA_P384_SHA256_ASN1, ring::signature::ECDSA_P384_SHA384_ASN1, ring::signature::ECDSA_P384_SHA384_FIXED, aws_lc_rs::signature::ECDSA_P384_SHA3_384_FIXED, aws_lc_rs::signature::ECDSA_P384_SHA512_ASN1, aws_lc_rs::signature::ECDSA_P384_SHA3_384_ASN1, aws_lc_rs::signature::ECDSA_P384_SHA3_384_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P384_SHA3_384_ASN1_SIGNING]
+    category: signature
+    algorithm: ECDSA-P-384
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-ecdsa-p521
+    functions: []
+    names: [aws_lc_rs::signature::ECDSA_P521_SHA1_FIXED, aws_lc_rs::signature::ECDSA_P521_SHA224_FIXED, aws_lc_rs::signature::ECDSA_P521_SHA256_FIXED, aws_lc_rs::signature::ECDSA_P521_SHA384_FIXED, aws_lc_rs::signature::ECDSA_P521_SHA512_FIXED, aws_lc_rs::signature::ECDSA_P521_SHA3_512_FIXED, aws_lc_rs::signature::ECDSA_P521_SHA1_ASN1, aws_lc_rs::signature::ECDSA_P521_SHA224_ASN1, aws_lc_rs::signature::ECDSA_P521_SHA256_ASN1, aws_lc_rs::signature::ECDSA_P521_SHA384_ASN1, aws_lc_rs::signature::ECDSA_P521_SHA512_ASN1, aws_lc_rs::signature::ECDSA_P521_SHA3_512_ASN1, aws_lc_rs::signature::ECDSA_P521_SHA224_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA256_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA384_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA512_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA3_512_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA224_ASN1_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA256_ASN1_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA384_ASN1_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA512_ASN1_SIGNING, aws_lc_rs::signature::ECDSA_P521_SHA3_512_ASN1_SIGNING]
+    category: signature
+    algorithm: ECDSA-P-521
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-ecdsa-secp256k1
+    functions: []
+    names: [aws_lc_rs::signature::ECDSA_P256K1_SHA256_FIXED, aws_lc_rs::signature::ECDSA_P256K1_SHA3_256_FIXED, aws_lc_rs::signature::ECDSA_P256K1_SHA256_ASN1, aws_lc_rs::signature::ECDSA_P256K1_SHA3_256_ASN1, aws_lc_rs::signature::ECDSA_P256K1_SHA256_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P256K1_SHA3_256_FIXED_SIGNING, aws_lc_rs::signature::ECDSA_P256K1_SHA256_ASN1_SIGNING, aws_lc_rs::signature::ECDSA_P256K1_SHA3_256_ASN1_SIGNING]
+    category: signature
+    algorithm: ECDSA-secp256k1
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-ed25519
+    functions: []
+    names: [ring::signature::ED25519, ring::signature::Ed25519KeyPair]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-ecdsa
+    functions: []
+    names: [ring::signature::EcdsaKeyPair]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: ring-random
+    functions: []
+    names: [ring::rand::SystemRandom]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
