@@ -1,0 +1,391 @@
+# Go's standard library (Go 1.27). Names are an import path and a member, as Go's documentation writes them
+# (crypto/sha256.New). An import path alone covers every member of that package (crypto/rsa covers rsa.GenerateKey and
+# *rsa.PrivateKey). HMAC, HKDF and PBKDF2 take the hash as an argument (hmac.New(sha256.New, key)), which is reported on
+# its own. A crypto/tls.Config built in code ("functions") is reported where TLS is set up.
+module: [crypto, crypto/sha256, crypto/sha512, crypto/sha3, crypto/sha1, crypto/md5, crypto/aes, crypto/des, crypto/rc4, crypto/rsa, crypto/dsa, crypto/ecdsa, crypto/ed25519, crypto/elliptic, crypto/ecdh, crypto/mlkem, crypto/mldsa, crypto/hpke, crypto/rand, crypto/tls, crypto/x509]
+rules:
+  - id: go-sha256
+    functions: []
+    names: [crypto/sha256.New, crypto/sha256.Sum256, crypto.SHA256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: go-sha224
+    functions: []
+    names: [crypto/sha256.New224, crypto/sha256.Sum224, crypto.SHA224]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: go-sha384
+    functions: []
+    names: [crypto/sha512.New384, crypto/sha512.Sum384, crypto.SHA384]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: go-sha512
+    functions: []
+    names: [crypto/sha512.New, crypto/sha512.Sum512, crypto.SHA512]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: go-sha512-256
+    functions: []
+    names: [crypto/sha512.New512_256, crypto/sha512.Sum512_256, crypto.SHA512_256]
+    category: hash
+    algorithm: SHA-512/256
+    status: observed-resistant
+  - id: go-sha512-224
+    functions: []
+    names: [crypto/sha512.New512_224, crypto/sha512.Sum512_224, crypto.SHA512_224]
+    category: hash
+    algorithm: SHA-512/224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: go-sha3-256
+    functions: []
+    names: [crypto/sha3.New256, crypto/sha3.Sum256, crypto.SHA3_256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: go-sha3-384
+    functions: []
+    names: [crypto/sha3.New384, crypto/sha3.Sum384, crypto.SHA3_384]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: go-sha3-512
+    functions: []
+    names: [crypto/sha3.New512, crypto/sha3.Sum512, crypto.SHA3_512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: go-sha3-224
+    functions: []
+    names: [crypto/sha3.New224, crypto/sha3.Sum224, crypto.SHA3_224]
+    category: hash
+    algorithm: SHA3-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: go-shake256
+    functions: []
+    names: [crypto/sha3.NewSHAKE256, crypto/sha3.SumSHAKE256, crypto/sha3.NewCSHAKE256]
+    category: hash
+    algorithm: SHAKE256
+    status: observed-resistant
+  - id: go-shake128
+    functions: []
+    names: [crypto/sha3.NewSHAKE128, crypto/sha3.SumSHAKE128, crypto/sha3.NewCSHAKE128]
+    category: hash
+    algorithm: SHAKE128
+    status: needs-review
+    note: "128-bit security level; a quantum computer reduces its margin. Review migration policy."
+  - id: go-sha1
+    functions: []
+    names: [crypto/sha1, crypto.SHA1]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: go-md5
+    functions: []
+    names: [crypto/md5, crypto.MD5, crypto.MD5SHA1]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: go-md4
+    functions: []
+    names: [crypto.MD4]
+    category: hash
+    algorithm: MD4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: go-ripemd160
+    functions: []
+    names: [crypto.RIPEMD160]
+    category: hash
+    algorithm: RIPEMD-160
+    status: needs-review
+    note: "An old 160-bit hash; replace with SHA-256 or stronger."
+  - id: go-aes
+    functions: []
+    names: [crypto/aes.NewCipher]
+    category: symmetric
+    algorithm: AES
+    status: unresolved
+    note: "The AES key size is the length of the key passed to aes.NewCipher: 128-bit needs review, 192 and 256 are fine."
+  - id: go-des
+    functions: []
+    names: [crypto/des.NewCipher]
+    category: symmetric
+    algorithm: DES
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: go-3des
+    functions: []
+    names: [crypto/des.NewTripleDESCipher]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: go-rc4
+    functions: []
+    names: [crypto/rc4]
+    category: symmetric
+    algorithm: RC4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: go-rsa
+    functions: []
+    names: [crypto/rsa, crypto/x509.ParsePKCS1PrivateKey, crypto/x509.ParsePKCS1PublicKey, crypto/x509.MarshalPKCS1PrivateKey, crypto/x509.MarshalPKCS1PublicKey, crypto/x509.RSA, crypto/x509.MD2WithRSA, crypto/x509.MD5WithRSA, crypto/x509.SHA1WithRSA, crypto/x509.SHA256WithRSA, crypto/x509.SHA384WithRSA, crypto/x509.SHA512WithRSA]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-rsa-pss
+    functions: []
+    names: [crypto/x509.SHA256WithRSAPSS, crypto/x509.SHA384WithRSAPSS, crypto/x509.SHA512WithRSAPSS]
+    category: signature
+    algorithm: RSA-PSS
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-dsa
+    functions: []
+    names: [crypto/dsa, crypto/x509.DSA, crypto/x509.DSAWithSHA1, crypto/x509.DSAWithSHA256]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-ecdsa
+    functions: []
+    names: [crypto/ecdsa, crypto/x509.ECDSA, crypto/x509.ECDSAWithSHA1, crypto/x509.ECDSAWithSHA256, crypto/x509.ECDSAWithSHA384, crypto/x509.ECDSAWithSHA512]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-ed25519
+    functions: []
+    names: [crypto/ed25519, crypto/x509.Ed25519, crypto/x509.PureEd25519]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-ec-p224
+    functions: []
+    names: [crypto/elliptic.P224]
+    category: keygen
+    algorithm: EC-P-224
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ec-p256
+    functions: []
+    names: [crypto/elliptic.P256]
+    category: keygen
+    algorithm: EC-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ec-p384
+    functions: []
+    names: [crypto/elliptic.P384]
+    category: keygen
+    algorithm: EC-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ec-p521
+    functions: []
+    names: [crypto/elliptic.P521]
+    category: keygen
+    algorithm: EC-P-521
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ec
+    functions: []
+    names: [crypto/elliptic, crypto/x509.ParseECPrivateKey, crypto/x509.MarshalECPrivateKey]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-x25519
+    functions: []
+    names: [crypto/ecdh.X25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ecdh-p256
+    functions: []
+    names: [crypto/ecdh.P256]
+    category: key-exchange
+    algorithm: ECDH-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ecdh-p384
+    functions: []
+    names: [crypto/ecdh.P384]
+    category: key-exchange
+    algorithm: ECDH-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ecdh-p521
+    functions: []
+    names: [crypto/ecdh.P521]
+    category: key-exchange
+    algorithm: ECDH-P-521
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ecdh
+    functions: []
+    names: [crypto/ecdh]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-ml-kem-768
+    functions: []
+    names: [crypto/mlkem.GenerateKey768, crypto/mlkem.NewDecapsulationKey768, crypto/mlkem.NewEncapsulationKey768, crypto/mlkem.DecapsulationKey768, crypto/mlkem.EncapsulationKey768]
+    category: key-exchange
+    algorithm: ML-KEM-768
+    status: observed-resistant
+  - id: go-ml-kem-1024
+    functions: []
+    names: [crypto/mlkem.GenerateKey1024, crypto/mlkem.NewDecapsulationKey1024, crypto/mlkem.NewEncapsulationKey1024, crypto/mlkem.DecapsulationKey1024, crypto/mlkem.EncapsulationKey1024]
+    category: key-exchange
+    algorithm: ML-KEM-1024
+    status: observed-resistant
+  - id: go-ml-kem
+    functions: []
+    names: [crypto/mlkem]
+    category: key-exchange
+    algorithm: ML-KEM
+    status: observed-resistant
+  - id: go-ml-dsa-44
+    functions: []
+    names: [crypto/mldsa.MLDSA44, crypto/x509.MLDSA44]
+    category: signature
+    algorithm: ML-DSA-44
+    status: observed-resistant
+  - id: go-ml-dsa-65
+    functions: []
+    names: [crypto/mldsa.MLDSA65, crypto/x509.MLDSA65]
+    category: signature
+    algorithm: ML-DSA-65
+    status: observed-resistant
+  - id: go-ml-dsa-87
+    functions: []
+    names: [crypto/mldsa.MLDSA87, crypto/x509.MLDSA87]
+    category: signature
+    algorithm: ML-DSA-87
+    status: observed-resistant
+  - id: go-ml-dsa
+    functions: []
+    names: [crypto/mldsa, crypto/x509.MLDSA]
+    category: signature
+    algorithm: ML-DSA
+    status: observed-resistant
+  - id: go-hpke-x25519mlkem768
+    functions: []
+    names: [crypto/hpke.MLKEM768X25519]
+    category: key-exchange
+    algorithm: X25519MLKEM768
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or X25519 holds."
+  - id: go-hpke-p256mlkem768
+    functions: []
+    names: [crypto/hpke.MLKEM768P256]
+    category: key-exchange
+    algorithm: SecP256r1MLKEM768
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or P-256 holds."
+  - id: go-hpke-p384mlkem1024
+    functions: []
+    names: [crypto/hpke.MLKEM1024P384]
+    category: key-exchange
+    algorithm: SecP384r1MLKEM1024
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-1024 or P-384 holds."
+  - id: go-hpke-mlkem768
+    functions: []
+    names: [crypto/hpke.MLKEM768]
+    category: key-exchange
+    algorithm: ML-KEM-768
+    status: observed-resistant
+  - id: go-hpke-mlkem1024
+    functions: []
+    names: [crypto/hpke.MLKEM1024]
+    category: key-exchange
+    algorithm: ML-KEM-1024
+    status: observed-resistant
+  - id: go-hpke-dhkem
+    functions: []
+    names: [crypto/hpke.DHKEM, crypto/hpke.NewDHKEMPrivateKey, crypto/hpke.NewDHKEMPublicKey]
+    category: key-exchange
+    algorithm: DHKEM
+    status: vulnerable
+    note: "HPKE with an elliptic-curve key exchange (the curve is the argument). A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-random
+    functions: []
+    names: [crypto/rand]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
+  - id: go-tls-x25519mlkem768
+    functions: []
+    names: [crypto/tls.X25519MLKEM768]
+    category: key-exchange
+    algorithm: X25519MLKEM768
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or X25519 holds."
+  - id: go-tls-p256mlkem768
+    functions: []
+    names: [crypto/tls.SecP256r1MLKEM768]
+    category: key-exchange
+    algorithm: SecP256r1MLKEM768
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or P-256 holds."
+  - id: go-tls-p384mlkem1024
+    functions: []
+    names: [crypto/tls.SecP384r1MLKEM1024]
+    category: key-exchange
+    algorithm: SecP384r1MLKEM1024
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-1024 or P-384 holds."
+  - id: go-tls-mlkem1024
+    functions: []
+    names: [crypto/tls.MLKEM1024]
+    category: key-exchange
+    algorithm: ML-KEM-1024
+    status: observed-resistant
+  - id: go-tls-x25519
+    functions: []
+    names: [crypto/tls.X25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-tls-p256
+    functions: []
+    names: [crypto/tls.CurveP256]
+    category: key-exchange
+    algorithm: ECDH-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-tls-p384
+    functions: []
+    names: [crypto/tls.CurveP384]
+    category: key-exchange
+    algorithm: ECDH-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-tls-p521
+    functions: []
+    names: [crypto/tls.CurveP521]
+    category: key-exchange
+    algorithm: ECDH-P-521
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: go-tls-config
+    functions: [crypto/tls.Config]
+    category: key-exchange
+    status: unresolved
+    note: "Sets up TLS. Go 1.24 and later offer the hybrid post-quantum key exchange X25519MLKEM768 first when CurvePreferences is not set (unless GODEBUG=tlsmlkem=0); earlier versions offer only classical key exchanges. Check the Go version and any CurvePreferences."

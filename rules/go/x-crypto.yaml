@@ -1,0 +1,239 @@
+# golang.org/x/crypto, the Go project's supplementary cryptography packages. A package that holds a single algorithm is
+# listed by its import path. For SSH, the key-exchange and key-type constants are listed (ssh.KeyExchangeCurve25519),
+# and building an ssh.ClientConfig or ssh.ServerConfig is reported where SSH is set up.
+module: [golang.org/x/crypto/sha3, golang.org/x/crypto/blake2b, golang.org/x/crypto/blake2s, golang.org/x/crypto/md4, golang.org/x/crypto/ripemd160, golang.org/x/crypto/argon2, golang.org/x/crypto/bcrypt, golang.org/x/crypto/scrypt, golang.org/x/crypto/chacha20poly1305, golang.org/x/crypto/chacha20, golang.org/x/crypto/salsa20, golang.org/x/crypto/nacl/secretbox, golang.org/x/crypto/blowfish, golang.org/x/crypto/cast5, golang.org/x/crypto/curve25519, golang.org/x/crypto/nacl/box, golang.org/x/crypto/ed25519, golang.org/x/crypto/nacl/sign, golang.org/x/crypto/ssh]
+rules:
+  - id: x-sha3-256
+    functions: []
+    names: [golang.org/x/crypto/sha3.New256, golang.org/x/crypto/sha3.Sum256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: x-sha3-384
+    functions: []
+    names: [golang.org/x/crypto/sha3.New384, golang.org/x/crypto/sha3.Sum384]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: x-sha3-512
+    functions: []
+    names: [golang.org/x/crypto/sha3.New512, golang.org/x/crypto/sha3.Sum512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: x-sha3-224
+    functions: []
+    names: [golang.org/x/crypto/sha3.New224, golang.org/x/crypto/sha3.Sum224]
+    category: hash
+    algorithm: SHA3-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: x-shake256
+    functions: []
+    names: [golang.org/x/crypto/sha3.NewShake256, golang.org/x/crypto/sha3.ShakeSum256, golang.org/x/crypto/sha3.NewCShake256]
+    category: hash
+    algorithm: SHAKE256
+    status: observed-resistant
+  - id: x-shake128
+    functions: []
+    names: [golang.org/x/crypto/sha3.NewShake128, golang.org/x/crypto/sha3.ShakeSum128, golang.org/x/crypto/sha3.NewCShake128]
+    category: hash
+    algorithm: SHAKE128
+    status: needs-review
+    note: "128-bit security level; a quantum computer reduces its margin. Review migration policy."
+  - id: x-keccak256
+    functions: []
+    names: [golang.org/x/crypto/sha3.NewLegacyKeccak256]
+    category: hash
+    algorithm: Keccak
+    status: observed-resistant
+    note: "The original Keccak, which differs from SHA-3 only in padding (used by Ethereum)."
+  - id: x-keccak512
+    functions: []
+    names: [golang.org/x/crypto/sha3.NewLegacyKeccak512]
+    category: hash
+    algorithm: Keccak
+    status: observed-resistant
+    note: "The original Keccak, which differs from SHA-3 only in padding (used by Ethereum)."
+  - id: x-blake2b
+    functions: []
+    names: [golang.org/x/crypto/blake2b]
+    category: hash
+    algorithm: BLAKE2b
+    status: observed-resistant
+  - id: x-blake2s
+    functions: []
+    names: [golang.org/x/crypto/blake2s]
+    category: hash
+    algorithm: BLAKE2s
+    status: observed-resistant
+  - id: x-md4
+    functions: []
+    names: [golang.org/x/crypto/md4]
+    category: hash
+    algorithm: MD4
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: x-ripemd160
+    functions: []
+    names: [golang.org/x/crypto/ripemd160]
+    category: hash
+    algorithm: RIPEMD-160
+    status: needs-review
+    note: "An old 160-bit hash; replace with SHA-256 or stronger."
+  - id: x-argon2
+    functions: []
+    names: [golang.org/x/crypto/argon2]
+    category: hash
+    algorithm: Argon2
+    status: observed-resistant
+  - id: x-bcrypt
+    functions: []
+    names: [golang.org/x/crypto/bcrypt]
+    category: hash
+    algorithm: bcrypt
+    status: observed-resistant
+  - id: x-scrypt
+    functions: []
+    names: [golang.org/x/crypto/scrypt]
+    category: hash
+    algorithm: scrypt
+    status: observed-resistant
+  - id: x-chacha20poly1305
+    functions: []
+    names: [golang.org/x/crypto/chacha20poly1305]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: x-chacha20
+    functions: []
+    names: [golang.org/x/crypto/chacha20]
+    category: symmetric
+    algorithm: ChaCha20
+    status: observed-resistant
+  - id: x-salsa20
+    functions: []
+    names: [golang.org/x/crypto/salsa20]
+    category: symmetric
+    algorithm: Salsa20
+    status: observed-resistant
+  - id: x-secretbox
+    functions: []
+    names: [golang.org/x/crypto/nacl/secretbox]
+    category: symmetric
+    algorithm: XSalsa20-Poly1305
+    status: observed-resistant
+  - id: x-blowfish
+    functions: []
+    names: [golang.org/x/crypto/blowfish]
+    category: symmetric
+    algorithm: Blowfish
+    status: needs-review
+    note: "64-bit blocks; replace with AES."
+  - id: x-cast5
+    functions: []
+    names: [golang.org/x/crypto/cast5]
+    category: symmetric
+    algorithm: CAST5
+    status: needs-review
+    note: "64-bit blocks; replace with AES."
+  - id: x-x25519
+    functions: []
+    names: [golang.org/x/crypto/curve25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: x-nacl-box
+    functions: []
+    names: [golang.org/x/crypto/nacl/box]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "NaCl box agrees on a key with X25519. A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: x-ed25519
+    functions: []
+    names: [golang.org/x/crypto/ed25519, golang.org/x/crypto/nacl/sign]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: x-ssh-kex-mlkem
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyExchangeMLKEM768X25519]
+    category: key-exchange
+    algorithm: mlkem768x25519-sha256
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or X25519 holds."
+  - id: x-ssh-kex-x25519
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyExchangeCurve25519]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: x-ssh-kex-ecdh
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyExchangeECDHP256, golang.org/x/crypto/ssh.KeyExchangeECDHP384, golang.org/x/crypto/ssh.KeyExchangeECDHP521]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: x-ssh-kex-dh
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyExchangeDH14SHA256, golang.org/x/crypto/ssh.KeyExchangeDH16SHA512, golang.org/x/crypto/ssh.KeyExchangeDHGEXSHA256, golang.org/x/crypto/ssh.InsecureKeyExchangeDH1SHA1, golang.org/x/crypto/ssh.InsecureKeyExchangeDH14SHA1, golang.org/x/crypto/ssh.InsecureKeyExchangeDHGEXSHA1]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: x-ssh-key-rsa
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyAlgoRSA, golang.org/x/crypto/ssh.KeyAlgoRSASHA256, golang.org/x/crypto/ssh.KeyAlgoRSASHA512]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: x-ssh-key-dsa
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyAlgoDSA, golang.org/x/crypto/ssh.InsecureKeyAlgoDSA]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: x-ssh-key-ecdsa
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyAlgoECDSA256, golang.org/x/crypto/ssh.KeyAlgoECDSA384, golang.org/x/crypto/ssh.KeyAlgoECDSA521, golang.org/x/crypto/ssh.KeyAlgoSKECDSA256]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: x-ssh-key-ed25519
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyAlgoED25519, golang.org/x/crypto/ssh.KeyAlgoSKED25519]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: x-ssh-key-mldsa44
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyAlgoMLDSA44]
+    category: signature
+    algorithm: ML-DSA-44
+    status: observed-resistant
+  - id: x-ssh-key-mldsa65
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyAlgoMLDSA65]
+    category: signature
+    algorithm: ML-DSA-65
+    status: observed-resistant
+  - id: x-ssh-key-mldsa87
+    functions: []
+    names: [golang.org/x/crypto/ssh.KeyAlgoMLDSA87]
+    category: signature
+    algorithm: ML-DSA-87
+    status: observed-resistant
+  - id: x-ssh-config
+    functions: [golang.org/x/crypto/ssh.ClientConfig, golang.org/x/crypto/ssh.ServerConfig, golang.org/x/crypto/ssh.Config]
+    category: key-exchange
+    status: unresolved
+    note: "Sets up SSH. golang.org/x/crypto v0.42.0 and later (with Go 1.24 or later) offer the hybrid post-quantum key exchange mlkem768x25519-sha256 first when KeyExchanges is not set; earlier versions offer only classical key exchanges. Check the version and any KeyExchanges."

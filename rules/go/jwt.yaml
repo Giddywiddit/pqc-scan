@@ -1,0 +1,120 @@
+# JWT libraries: golang-jwt/jwt (v5, v4 and v3) and the older dgrijalva/jwt-go it was forked from, which have the
+# same names. Each is read as v5 (see mirrors). The algorithm is a signing method (jwt.SigningMethodRS256), or a name
+# passed to jwt.GetSigningMethod("RS256").
+module: [github.com/golang-jwt/jwt/v5, github.com/golang-jwt/jwt/v4, github.com/golang-jwt/jwt, github.com/dgrijalva/jwt-go, github.com/dgrijalva/jwt-go/v4]
+mirrors: { "github.com/golang-jwt/jwt/v4": "github.com/golang-jwt/jwt/v5", "github.com/golang-jwt/jwt": "github.com/golang-jwt/jwt/v5", "github.com/dgrijalva/jwt-go": "github.com/golang-jwt/jwt/v5", "github.com/dgrijalva/jwt-go/v4": "github.com/golang-jwt/jwt/v5" }
+rules:
+  - id: go-jwt-rs256
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodRS256]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-rs384
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodRS384]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-rs512
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodRS512]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-ps256
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodPS256]
+    category: signature
+    algorithm: RSA-PSS
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-ps384
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodPS384]
+    category: signature
+    algorithm: RSA-PSS
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-ps512
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodPS512]
+    category: signature
+    algorithm: RSA-PSS
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-es256
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodES256]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-es384
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodES384]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-es512
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodES512]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-eddsa
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodEdDSA]
+    category: signature
+    algorithm: EdDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: go-jwt-hs256
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodHS256]
+    category: signature
+    algorithm: HMAC-SHA256
+    status: observed-resistant
+  - id: go-jwt-hs384
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodHS384]
+    category: signature
+    algorithm: HMAC-SHA384
+    status: observed-resistant
+  - id: go-jwt-hs512
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodHS512]
+    category: signature
+    algorithm: HMAC-SHA512
+    status: observed-resistant
+  - id: go-jwt-none
+    functions: []
+    names: [github.com/golang-jwt/jwt/v5.SigningMethodNone, github.com/golang-jwt/jwt/v5.UnsafeAllowNoneSignatureType]
+    category: signature
+    algorithm: none
+    status: needs-review
+    note: "Unsigned token; no cryptographic protection."
+  - id: go-jwt-by-name
+    functions: [github.com/golang-jwt/jwt/v5.GetSigningMethod]
+    category: signature
+    algorithmFrom: { arg: 0 }
+    values:
+      "RS256": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "RS384": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "RS512": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "PS256": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "PS384": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "PS512": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "ES256": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "ES384": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "ES512": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "EdDSA": { algorithm: EdDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "HS256": { algorithm: HMAC-SHA256, status: observed-resistant }
+      "HS384": { algorithm: HMAC-SHA384, status: observed-resistant }
+      "HS512": { algorithm: HMAC-SHA512, status: observed-resistant }
+      "none": { algorithm: none, status: needs-review, note: "Unsigned token; no cryptographic protection." }

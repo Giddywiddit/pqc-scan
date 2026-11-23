@@ -5,7 +5,7 @@ const ICONS: Record<Status, string> = { vulnerable: '❌', 'observed-resistant':
 export const MASCOT_BANNER = [
   ' /\\_/\\',
   '( 0.1 )    [ pqc-scan • Post-Quantum Cryptography Scanner ]',
-  ' > ^ <     Finds the cryptography in your JavaScript, TypeScript, C, C++ and Rust',
+  ' > ^ <     Finds the cryptography in your JavaScript, TypeScript, C, C++, Rust and Go',
   '           ---------------------------------------------------------',
   '           Looks for what quantum computers will break (NIST FIPS 203/204/205)\n',
 ].join('\n');

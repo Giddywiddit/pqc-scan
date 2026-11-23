@@ -18,24 +18,36 @@ const cases: Case[] = [];
 // How a call to `fn` is written in each language. In C and C++, a key with an underscore is a constant
 // (EVP_PKEY_RSA, PSA_ALG_SHA_256) and is passed as a bare upper-case name; other keys are strings or numbers.
 // C++ rule names are relative to the rule file's namespace; C rules are called from C++ as they are from C. Rust rule
-// names are full paths from the crate.
+// names are full paths from the crate. Go rule names are an import path and a member (`crypto/sha256.New`), and C rules
+// are called from Go through cgo (`C.EVP_sha256()`).
 const callIn: Record<string, (module: string, fn: string, args: string[], ruleLanguage: string) => string> = {
   javascript: (module, fn, args) => `import * as m from ${quote(module)};\nm.${fn}(${args.join(', ')});`,
   c: (_module, fn, args) => `void f(void) { ${fn}(${args.join(', ')}); }`,
   cpp: (module, fn, args, ruleLanguage) => `void f() { ${ruleLanguage === 'cpp' ? `${module}::` : ''}${fn}(${args.join(', ')}); }`,
   rust: (_module, fn, args) => `fn f() { ${fn}(${args.join(', ')}); }`,
+  go: (_module, fn, args, ruleLanguage) => (ruleLanguage === 'c'
+    ? `package p\nimport "C"\nfunc f() { C.${fn}(${args.join(', ')}) }`
+    : `package p\nimport m ${quote(goPath(fn))}\nfunc f() { m.${fn.slice(goPath(fn).length + 1)}(${args.join(', ')}) }`),
 };
-const valueIn: Record<string, (key: string) => string> = {
+// The import path in a Go rule name: everything before the member, which follows the last path element's first dot.
+const goPath = (name: string) => {
+  const slash = name.lastIndexOf('/');
+  const dot = name.indexOf('.', slash + 1);
+  return dot < 0 ? name : name.slice(0, dot);
+};
+const valueIn: Record<string, (key: string, ruleLanguage: string) => string> = {
   javascript: quote,
   c: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
   cpp: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
   rust: quote,
+  go: (key, ruleLanguage) => (ruleLanguage === 'c' && key.includes('_') ? `C.${key.toUpperCase()}` : quote(key)),
 };
 // How a rule's name is used, for languages with name rules: a C++ variable of the type, or a Rust path below the name
 // (a crate-root name such as `md5` is always used through something inside it).
 const declareIn: Record<string, (module: string, name: string) => string> = {
   cpp: (module, type) => `void f() { ${module}::${type} x; }`,
   rust: (_module, name) => `fn f() { let _ = ${name}::new(); }`,
+  go: (_module, name) => `package p\nimport m ${quote(goPath(name))}\nvar _ = m.${goPath(name) === name ? 'Anything' : name.slice(goPath(name).length + 1)}`,
 };
 // Each rule is exercised in every language that reads its folder (C rules in C and in C++ files).
 for (const group of groups) for (const adapter of languages.filter((item) => [item.id, ...(item.alsoUsesRulesOf ?? [])].includes(group.language))) {
@@ -52,7 +64,7 @@ for (const group of groups) for (const adapter of languages.filter((item) => [it
       else {
         const { arg, property } = rule.algorithmFrom;
         for (const [key, value] of Object.entries(rule.values ?? {})) {
-          const args = [...Array(arg).fill('x'), property ? nested(property, key) : valueIn[language](key)];
+          const args = [...Array(arg).fill('x'), property ? nested(property, key) : valueIn[language](key, group.language)];
           cases.push({ name: `${language} ${rule.id}: ${fn}(${key})`, language, code: call(args), expected: [{ ruleId: rule.id, algorithm: value.algorithm, status: value.status }] });
         }
       }
@@ -81,6 +93,13 @@ describe('rule files', () => {
   it('lists each C function in only one rule file (a C call does not name its library, so the first file would win)', () => {
     const functions = groups.filter((group) => group.language === 'c').flatMap((group) => group.rules.flatMap((rule) => rule.functions));
     expect(functions.filter((fn, index) => functions.indexOf(fn) !== index)).toEqual([]);
+  });
+
+  it('starts every Go name with an import path its rule file lists (a typo would never match)', () => {
+    const orphans = groups.filter((group) => group.language === 'go').flatMap((group) => group.rules
+      .flatMap((rule) => [...rule.functions, ...(rule.names ?? [])])
+      .filter((name) => !group.module.some((path) => name === path || name.startsWith(`${path}.`))));
+    expect(orphans).toEqual([]);
   });
 
   it('gives every unresolved or needs-review value an explanatory note', () => {

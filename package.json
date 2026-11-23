@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Conservative post-quantum cryptography inventory for JavaScript, TypeScript, C, C++ and Rust",
+  "description": "Conservative post-quantum cryptography inventory for JavaScript, TypeScript, C, C++, Rust and Go",
   "scripts": {
     "scan": "tsx src/cli.ts",
     "test": "vitest run",
@@ -12,6 +12,7 @@
   "dependencies": {
     "tree-sitter-c": "0.24.1",
     "tree-sitter-cpp": "0.23.4",
+    "tree-sitter-go": "0.25.0",
     "tree-sitter-rust": "0.24.0",
     "web-tree-sitter": "0.27.2",
     "yaml": "^2.9.1"

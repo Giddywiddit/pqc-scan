@@ -31,14 +31,14 @@ function lookupFor(rules: ModuleRules[]): RustLookup {
   const functions = new Map<string, Rule>();
   const names = new Map<string, Rule>();
   const mirrors = new Map<string, string>();
-  for (const group of rules) {
+  for (const group of rules.filter((item) => item.language === 'rust')) {
     for (const rule of group.rules) {
       for (const name of rule.functions) if (!functions.has(name)) functions.set(name, rule);
       for (const name of rule.names ?? []) if (!names.has(name)) names.set(name, rule);
     }
     for (const [from, to] of Object.entries(group.mirrors ?? {})) mirrors.set(from, to);
   }
-  const crates = [...new Set(rules.flatMap((group) => group.module))].map(escape).join('|');
+  const crates = [...new Set(rules.filter((group) => group.language === 'rust').flatMap((group) => group.module))].map(escape).join('|');
   const lookup = {
     functions,
     names,

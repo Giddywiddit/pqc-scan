@@ -15,7 +15,7 @@ npm run typecheck   # check the TypeScript code for type errors
 
 ## Adding a library
 
-1. Add `rules/<language>/<library>.yaml`. Rule files are plain text and need no programming: each rule lists function names, and either a fixed algorithm and status or the argument that holds the algorithm and a table of its values. A rule can also list `names`, whose every use counts, called or not: C++ type names, written relative to the namespace given in `module`, or Rust paths written from the crate (`sha2::Sha256`). Check every name against the library's own header files or documentation.
+1. Add `rules/<language>/<library>.yaml`. Rule files are plain text and need no programming: each rule lists function names, and either a fixed algorithm and status or the argument that holds the algorithm and a table of its values. A rule can also list `names`, whose every use counts, called or not: C++ type names, written relative to the namespace given in `module`, Rust paths written from the crate (`sha2::Sha256`), or Go import paths with a member (`crypto/sha256.New`). In Go, `functions` also count where a struct is built (`tls.Config{...}`). Check every name against the library's own header files or documentation.
 2. Add a short example file to `test/fixtures/<language>/` with an `expect:` comment on each line that should produce a finding.
 3. Add the library to `rules/<language>/README.md`.
 

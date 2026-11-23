@@ -44,6 +44,17 @@ describe('filesystem scanning', () => {
     expect(scan(dir, loadRules()).map((item) => item.file).sort()).toEqual([join('src', 'a.rs'), join('tools', 'target', 'a.rs')]);
   });
 
+  it("skips a Go module's vendor folder, but not a folder named vendor elsewhere", () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pqc-vendor-'));
+    const code = 'package p\n\nimport "crypto/md5"\n\nvar h = md5.New()\n';
+    writeFileSync(join(dir, 'go.mod'), 'module example.com/x\n');
+    for (const folder of ['vendor/golang.org/x/crypto', 'cmd', 'tools/vendor']) {
+      mkdirSync(join(dir, folder), { recursive: true });
+      writeFileSync(join(dir, folder, 'a.go'), code);
+    }
+    expect(scan(dir, loadRules()).map((item) => item.file).sort()).toEqual([join('cmd', 'a.go'), join('tools', 'vendor', 'a.go')]);
+  });
+
   it('flags importers of a wrapper whose algorithm is decided by its callers, across extensions and re-exports', () => {
     const expected = JSON.parse(readFileSync(join(fixture('wrapper'), 'expected.json'), 'utf8'));
     const actual = scan(fixture('wrapper'), loadRules())

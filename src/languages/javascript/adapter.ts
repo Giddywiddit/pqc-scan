@@ -214,7 +214,9 @@ function findModuleRules(rules: ModuleRules[], target: Binding): ModuleRules | u
   return rules.find((group) => group.module.some((item) => moduleMatches(item, target.module)));
 }
 
-export function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[] {
+export function scanSource(text: string, file: string, allRules: ModuleRules[]): Finding[] {
+  // Only JavaScript rule files: another language's may name the same module (Go's standard library has `crypto`).
+  const rules = allRules.filter((group) => group.language === 'javascript');
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const diagnostics = (source as ts.SourceFile & { parseDiagnostics: readonly ts.DiagnosticWithLocation[] }).parseDiagnostics;
   if (diagnostics.length > 0) {

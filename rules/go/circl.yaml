@@ -1,0 +1,137 @@
+# Cloudflare's CIRCL (github.com/cloudflare/circl), which has post-quantum and classical algorithms. Each parameter set
+# is its own package (kem/mlkem/mlkem768), listed by import path. Hybrid key exchanges and HPKE are listed by name.
+module: [github.com/cloudflare/circl/kem/mlkem/mlkem512, github.com/cloudflare/circl/kem/mlkem/mlkem768, github.com/cloudflare/circl/kem/mlkem/mlkem1024, github.com/cloudflare/circl/sign/mldsa/mldsa44, github.com/cloudflare/circl/sign/mldsa/mldsa65, github.com/cloudflare/circl/sign/mldsa/mldsa87, github.com/cloudflare/circl/sign/slhdsa, github.com/cloudflare/circl/kem/xwing, github.com/cloudflare/circl/kem/hybrid, github.com/cloudflare/circl/kem/kyber/kyber512, github.com/cloudflare/circl/kem/kyber/kyber768, github.com/cloudflare/circl/kem/kyber/kyber1024, github.com/cloudflare/circl/sign/dilithium, github.com/cloudflare/circl/sign/dilithium/mode2, github.com/cloudflare/circl/sign/dilithium/mode3, github.com/cloudflare/circl/sign/dilithium/mode5, github.com/cloudflare/circl/sign/eddilithium2, github.com/cloudflare/circl/sign/eddilithium3, github.com/cloudflare/circl/kem/frodo/frodo640shake, github.com/cloudflare/circl/sign/ed25519, github.com/cloudflare/circl/sign/ed448, github.com/cloudflare/circl/dh/x25519, github.com/cloudflare/circl/dh/x448, github.com/cloudflare/circl/hpke, github.com/cloudflare/circl/sign/bls]
+rules:
+  - id: circl-ml-kem-512
+    functions: []
+    names: [github.com/cloudflare/circl/kem/mlkem/mlkem512]
+    category: key-exchange
+    algorithm: ML-KEM-512
+    status: observed-resistant
+  - id: circl-ml-kem-768
+    functions: []
+    names: [github.com/cloudflare/circl/kem/mlkem/mlkem768]
+    category: key-exchange
+    algorithm: ML-KEM-768
+    status: observed-resistant
+  - id: circl-ml-kem-1024
+    functions: []
+    names: [github.com/cloudflare/circl/kem/mlkem/mlkem1024]
+    category: key-exchange
+    algorithm: ML-KEM-1024
+    status: observed-resistant
+  - id: circl-ml-dsa-44
+    functions: []
+    names: [github.com/cloudflare/circl/sign/mldsa/mldsa44]
+    category: signature
+    algorithm: ML-DSA-44
+    status: observed-resistant
+  - id: circl-ml-dsa-65
+    functions: []
+    names: [github.com/cloudflare/circl/sign/mldsa/mldsa65]
+    category: signature
+    algorithm: ML-DSA-65
+    status: observed-resistant
+  - id: circl-ml-dsa-87
+    functions: []
+    names: [github.com/cloudflare/circl/sign/mldsa/mldsa87]
+    category: signature
+    algorithm: ML-DSA-87
+    status: observed-resistant
+  - id: circl-slh-dsa
+    functions: []
+    names: [github.com/cloudflare/circl/sign/slhdsa]
+    category: signature
+    algorithm: SLH-DSA
+    status: observed-resistant
+  - id: circl-x-wing
+    functions: []
+    names: [github.com/cloudflare/circl/kem/xwing, github.com/cloudflare/circl/hpke.KEM_XWING]
+    category: key-exchange
+    algorithm: X-Wing
+    status: observed-resistant
+    note: "X-Wing combines ML-KEM-768 with X25519; it stays secure if either part holds."
+  - id: circl-x25519mlkem768
+    functions: []
+    names: [github.com/cloudflare/circl/kem/hybrid.X25519MLKEM768]
+    category: key-exchange
+    algorithm: X25519MLKEM768
+    status: observed-resistant
+    note: "Hybrid: stays secure if either ML-KEM-768 or X25519 holds."
+  - id: circl-kyber
+    functions: []
+    names: [github.com/cloudflare/circl/kem/kyber/kyber512, github.com/cloudflare/circl/kem/kyber/kyber768, github.com/cloudflare/circl/kem/kyber/kyber1024, github.com/cloudflare/circl/kem/hybrid.Kyber512X25519, github.com/cloudflare/circl/kem/hybrid.Kyber768X25519, github.com/cloudflare/circl/kem/hybrid.Kyber768X448, github.com/cloudflare/circl/kem/hybrid.Kyber1024X448, github.com/cloudflare/circl/kem/hybrid.P256Kyber768Draft00, github.com/cloudflare/circl/hpke.KEM_X25519_KYBER768_DRAFT00]
+    category: key-exchange
+    algorithm: Kyber
+    status: needs-review
+    note: "Pre-standard Kyber. It is believed to resist quantum computers, but the NIST standard is ML-KEM; migrate to it."
+  - id: circl-dilithium
+    functions: []
+    names: [github.com/cloudflare/circl/sign/dilithium, github.com/cloudflare/circl/sign/dilithium/mode2, github.com/cloudflare/circl/sign/dilithium/mode3, github.com/cloudflare/circl/sign/dilithium/mode5, github.com/cloudflare/circl/sign/eddilithium2, github.com/cloudflare/circl/sign/eddilithium3]
+    category: signature
+    algorithm: Dilithium
+    status: needs-review
+    note: "Pre-standard Dilithium. It is believed to resist quantum computers, but the NIST standard is ML-DSA; migrate to it."
+  - id: circl-frodo
+    functions: []
+    names: [github.com/cloudflare/circl/kem/frodo/frodo640shake]
+    category: key-exchange
+    algorithm: FrodoKEM
+    status: needs-review
+    note: "Believed to resist quantum computers, but not a NIST standard. Check it is allowed by your policy."
+  - id: circl-ed25519
+    functions: []
+    names: [github.com/cloudflare/circl/sign/ed25519]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: circl-ed448
+    functions: []
+    names: [github.com/cloudflare/circl/sign/ed448]
+    category: signature
+    algorithm: Ed448
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: circl-x25519
+    functions: []
+    names: [github.com/cloudflare/circl/dh/x25519, github.com/cloudflare/circl/hpke.KEM_X25519_HKDF_SHA256]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: circl-x448
+    functions: []
+    names: [github.com/cloudflare/circl/dh/x448, github.com/cloudflare/circl/hpke.KEM_X448_HKDF_SHA512]
+    category: key-exchange
+    algorithm: X448
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: circl-hpke-p256
+    functions: []
+    names: [github.com/cloudflare/circl/hpke.KEM_P256_HKDF_SHA256]
+    category: key-exchange
+    algorithm: ECDH-P-256
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: circl-hpke-p384
+    functions: []
+    names: [github.com/cloudflare/circl/hpke.KEM_P384_HKDF_SHA384]
+    category: key-exchange
+    algorithm: ECDH-P-384
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: circl-hpke-p521
+    functions: []
+    names: [github.com/cloudflare/circl/hpke.KEM_P521_HKDF_SHA512]
+    category: key-exchange
+    algorithm: ECDH-P-521
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: circl-bls
+    functions: []
+    names: [github.com/cloudflare/circl/sign/bls]
+    category: signature
+    algorithm: BLS
+    status: vulnerable
+    note: "BLS signatures rely on elliptic-curve pairings. A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
