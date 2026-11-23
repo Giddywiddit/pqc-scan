@@ -30,4 +30,5 @@ const findings = scan(path, loadRules());
 if (json) console.log(JSON.stringify(toReport(findings), null, 2));
 else printTable(findings);
 
-process.exit(findings.some((item) => item.status !== 'observed-resistant') ? 1 : 0);
+// exitCode, not exit(): exiting at once would cut off output still being written to a pipe.
+process.exitCode = findings.some((item) => item.status !== 'observed-resistant') ? 1 : 0;

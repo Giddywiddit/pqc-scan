@@ -131,6 +131,15 @@ describe('CLI contract', () => {
     expect(result.stdout).toMatch(/not a security conclusion/);
   });
 
+  it('writes the whole --json report to a pipe, even past 64 KB', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pqc-large-'));
+    writeFileSync(join(dir, 'many.c'), Array.from({ length: 400 }, (_, index) => `void f${index}(void) { RSA_generate_key_ex(k, 2048, e, 0); }`).join('\n'));
+    const result = cli(dir, '--json');
+    expect(result.stdout.length).toBeGreaterThan(65536);
+    expect(JSON.parse(result.stdout).summary.total).toBe(400);
+    expect(result.status).toBe(1);
+  });
+
   it('scans C files end to end, loading the C parser before the scan', () => {
     const result = cli(fixture('c'), '--json');
     expect(result.status).toBe(1);
