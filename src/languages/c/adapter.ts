@@ -58,8 +58,9 @@ function unwrap(node: Node): Node {
 
 /**
  * The algorithm name an argument holds. A string or number is taken as written. A bare name (`EVP_PKEY_RSA`) or a
- * call with no arguments (`EVP_sha256()`) counts only when the rule's table knows it: any other name is a variable
- * whose value is not known here, so it is reported as unresolved rather than as an unknown algorithm.
+ * call (`EVP_sha256()`, `PSA_ALG_ECDSA(PSA_ALG_SHA_256)`, matched by its outer name) counts only when the rule's table
+ * knows it: any other name is a variable whose value is not known here, so it is reported as unresolved rather than as
+ * an unknown algorithm.
  */
 function argumentNames(node: Node | null | undefined, values: Record<string, unknown>): string[] | null {
   if (!node) return null;
@@ -68,7 +69,7 @@ function argumentNames(node: Node | null | undefined, values: Record<string, unk
   if (value.type === 'number_literal') return [value.text];
   const name = value.type === 'identifier'
     ? value.text
-    : value.type === 'call_expression' && value.childForFieldName('arguments')?.namedChildCount === 0 && value.childForFieldName('function')?.type === 'identifier'
+    : value.type === 'call_expression' && value.childForFieldName('function')?.type === 'identifier'
       ? value.childForFieldName('function')!.text
       : null;
   return name !== null && lookup(values, name) !== undefined ? [name] : null;

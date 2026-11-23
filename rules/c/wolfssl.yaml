@@ -1,0 +1,247 @@
+# wolfSSL's own wolfCrypt functions (wc_...) and its TLS functions (wolfSSL_...). Code written against wolfSSL's
+# OpenSSL compatibility layer uses OpenSSL's names and is matched by openssl.yaml.
+module: [wolfssl]
+rules:
+  - id: wolfssl-sha256
+    functions: [wc_InitSha256, wc_InitSha256_ex, wc_Sha256Hash]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: wolfssl-sha384
+    functions: [wc_InitSha384, wc_InitSha384_ex, wc_Sha384Hash]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: wolfssl-sha512
+    functions: [wc_InitSha512, wc_InitSha512_ex, wc_Sha512Hash]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: wolfssl-sha512-256
+    functions: [wc_InitSha512_256, wc_Sha512_256Hash]
+    category: hash
+    algorithm: SHA-512/256
+    status: observed-resistant
+  - id: wolfssl-sha3
+    functions: [wc_InitSha3_256, wc_Sha3_256Hash]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: wolfssl-sha3-384
+    functions: [wc_InitSha3_384, wc_Sha3_384Hash]
+    category: hash
+    algorithm: SHA3-384
+    status: observed-resistant
+  - id: wolfssl-sha3-512
+    functions: [wc_InitSha3_512, wc_Sha3_512Hash]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
+  - id: wolfssl-sha224
+    functions: [wc_InitSha224, wc_Sha224Hash]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "112-bit collision strength; review against your policy."
+  - id: wolfssl-sha1
+    functions: [wc_InitSha, wc_InitSha_ex, wc_ShaHash]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: wolfssl-md5
+    functions: [wc_InitMd5, wc_InitMd5_ex, wc_Md5Hash]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: wolfssl-hmac
+    functions: [wc_HmacSetKey, wc_HmacSetKey_ex]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values:
+      "wc_sha256": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "wc_sha384": { algorithm: HMAC-SHA-384, status: observed-resistant }
+      "wc_sha512": { algorithm: HMAC-SHA-512, status: observed-resistant }
+      "wc_sha3_256": { algorithm: HMAC-SHA3-256, status: observed-resistant }
+      "wc_sha3_384": { algorithm: HMAC-SHA3-384, status: observed-resistant }
+      "wc_sha3_512": { algorithm: HMAC-SHA3-512, status: observed-resistant }
+      "wc_sha224": { algorithm: HMAC-SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "wc_sha3_224": { algorithm: HMAC-SHA3-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "wc_sha": { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "wc_md5": { algorithm: HMAC-MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+  - id: wolfssl-aes-setkey
+    functions: [wc_AesSetKey, wc_AesGcmSetKey]
+    category: symmetric
+    algorithmFrom: { arg: 2 }
+    values:
+      "16": { algorithm: AES-128, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "24": { algorithm: AES-192, status: observed-resistant }
+      "32": { algorithm: AES-256, status: observed-resistant }
+  - id: wolfssl-chacha20-poly1305
+    functions: [wc_ChaCha20Poly1305_Encrypt, wc_ChaCha20Poly1305_Decrypt]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: wolfssl-3des
+    functions: [wc_Des3_SetKey]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: wolfssl-rsa-keygen
+    functions: [wc_MakeRsaKey, wc_RsaPrivateKeyDecode, wc_RsaPublicKeyDecode]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: wolfssl-rsa-encrypt
+    functions: [wc_RsaPublicEncrypt, wc_RsaPrivateDecrypt, wc_RsaPublicEncrypt_ex, wc_RsaPrivateDecrypt_ex]
+    category: encryption
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: wolfssl-rsa-sign
+    functions: [wc_RsaSSL_Sign, wc_RsaSSL_Verify, wc_RsaPSS_Sign, wc_RsaPSS_Verify]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: wolfssl-ec-keygen
+    functions: [wc_ecc_make_key, wc_ecc_make_key_ex, wc_EccPrivateKeyDecode, wc_EccPublicKeyDecode]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: wolfssl-ecdsa
+    functions: [wc_ecc_sign_hash, wc_ecc_verify_hash]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: wolfssl-ecdh
+    functions: [wc_ecc_shared_secret]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: wolfssl-x25519
+    functions: [wc_curve25519_make_key, wc_curve25519_shared_secret]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: wolfssl-x448
+    functions: [wc_curve448_make_key, wc_curve448_shared_secret]
+    category: key-exchange
+    algorithm: X448
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: wolfssl-ed25519
+    functions: [wc_ed25519_make_key, wc_ed25519_sign_msg, wc_ed25519_verify_msg]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: wolfssl-ed448
+    functions: [wc_ed448_make_key, wc_ed448_sign_msg, wc_ed448_verify_msg]
+    category: signature
+    algorithm: Ed448
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: wolfssl-dh
+    functions: [wc_DhGenerateKeyPair, wc_DhAgree]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: wolfssl-dsa
+    functions: [wc_MakeDsaKey, wc_DsaSign, wc_DsaVerify]
+    category: signature
+    algorithm: DSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: wolfssl-mlkem
+    functions: [wc_MlKemKey_Init]
+    category: key-exchange
+    algorithmFrom: { arg: 1 }
+    values:
+      "wc_ml_kem_512": { algorithm: ML-KEM-512, status: observed-resistant }
+      "wc_ml_kem_768": { algorithm: ML-KEM-768, status: observed-resistant }
+      "wc_ml_kem_1024": { algorithm: ML-KEM-1024, status: observed-resistant }
+  - id: wolfssl-mldsa
+    functions: [wc_MlDsaKey_SetParams, wc_dilithium_set_level]
+    category: signature
+    algorithmFrom: { arg: 1 }
+    values:
+      "wc_ml_dsa_44": { algorithm: ML-DSA-44, status: observed-resistant }
+      "wc_ml_dsa_65": { algorithm: ML-DSA-65, status: observed-resistant }
+      "wc_ml_dsa_87": { algorithm: ML-DSA-87, status: observed-resistant }
+      "2": { algorithm: ML-DSA-44, status: observed-resistant }
+      "3": { algorithm: ML-DSA-65, status: observed-resistant }
+      "5": { algorithm: ML-DSA-87, status: observed-resistant }
+  - id: wolfssl-slhdsa
+    functions: [wc_SlhDsaKey_Init]
+    category: signature
+    algorithmFrom: { arg: 1 }
+    values:
+      "slhdsa_sha2_128s": { algorithm: SLH-DSA-SHA2-128s, status: observed-resistant }
+      "slhdsa_sha2_128f": { algorithm: SLH-DSA-SHA2-128f, status: observed-resistant }
+      "slhdsa_sha2_192s": { algorithm: SLH-DSA-SHA2-192s, status: observed-resistant }
+      "slhdsa_sha2_192f": { algorithm: SLH-DSA-SHA2-192f, status: observed-resistant }
+      "slhdsa_sha2_256s": { algorithm: SLH-DSA-SHA2-256s, status: observed-resistant }
+      "slhdsa_sha2_256f": { algorithm: SLH-DSA-SHA2-256f, status: observed-resistant }
+      "slhdsa_shake128s": { algorithm: SLH-DSA-SHAKE-128s, status: observed-resistant }
+      "slhdsa_shake128f": { algorithm: SLH-DSA-SHAKE-128f, status: observed-resistant }
+      "slhdsa_shake192s": { algorithm: SLH-DSA-SHAKE-192s, status: observed-resistant }
+      "slhdsa_shake192f": { algorithm: SLH-DSA-SHAKE-192f, status: observed-resistant }
+      "slhdsa_shake256s": { algorithm: SLH-DSA-SHAKE-256s, status: observed-resistant }
+      "slhdsa_shake256f": { algorithm: SLH-DSA-SHAKE-256f, status: observed-resistant }
+  - id: wolfssl-lms
+    functions: [wc_LmsKey_Init]
+    category: signature
+    algorithm: LMS
+    status: observed-resistant
+    note: "LMS is a hash-based signature approved by NIST (SP 800-208). Each private key can sign only a fixed number of times."
+  - id: wolfssl-xmss
+    functions: [wc_XmssKey_Init]
+    category: signature
+    algorithm: XMSS
+    status: observed-resistant
+    note: "XMSS is a hash-based signature approved by NIST (SP 800-208). Each private key can sign only a fixed number of times."
+  - id: wolfssl-random
+    functions: [wc_RNG_GenerateBlock, wc_RNG_GenerateByte]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
+  - id: wolfssl-key-material
+    functions: [wolfSSL_CTX_use_PrivateKey_file, wolfSSL_CTX_use_PrivateKey_buffer, wolfSSL_CTX_use_certificate_file, wolfSSL_CTX_use_certificate_buffer, wolfSSL_CTX_use_certificate_chain_file, wolfSSL_CTX_use_certificate_chain_buffer, wolfSSL_use_PrivateKey_file, wolfSSL_use_PrivateKey_buffer]
+    category: keygen
+    status: unresolved
+    note: "Key type depends on the key or certificate loaded at run time; review."
+  - id: wolfssl-tls-context
+    functions: [wolfSSL_CTX_new]
+    category: key-exchange
+    status: unresolved
+    note: "TLS key exchange: whether a post-quantum group such as X25519MLKEM768 is offered depends on the wolfSSL version, how it was built and the groups configured. Check them."
+  - id: wolfssl-tls-groups
+    functions: [wolfSSL_CTX_set1_groups_list, wolfSSL_set1_groups_list, wolfSSL_CTX_set_groups, wolfSSL_set_groups, wolfSSL_CTX_set1_curves_list]
+    category: key-exchange
+    status: unresolved
+    note: "Configures TLS key-exchange groups; check the list includes a post-quantum group such as X25519MLKEM768."
+  - id: wolfssl-tls-key-share
+    functions: [wolfSSL_UseKeyShare]
+    category: key-exchange
+    algorithmFrom: { arg: 1 }
+    values:
+      "wolfssl_x25519mlkem768": { algorithm: X25519MLKEM768, status: observed-resistant, note: "Hybrid: stays secure if either ML-KEM-768 or X25519 holds." }
+      "wolfssl_secp256r1mlkem768": { algorithm: SecP256r1MLKEM768, status: observed-resistant, note: "Hybrid: stays secure if either ML-KEM-768 or P-256 holds." }
+      "wolfssl_secp384r1mlkem1024": { algorithm: SecP384r1MLKEM1024, status: observed-resistant, note: "Hybrid: stays secure if either ML-KEM-1024 or P-384 holds." }
+      "wolfssl_ml_kem_512": { algorithm: ML-KEM-512, status: observed-resistant }
+      "wolfssl_ml_kem_768": { algorithm: ML-KEM-768, status: observed-resistant }
+      "wolfssl_ml_kem_1024": { algorithm: ML-KEM-1024, status: observed-resistant }
+      "wolfssl_ecc_secp256r1": { algorithm: ECDH-P-256, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "wolfssl_ecc_secp384r1": { algorithm: ECDH-P-384, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "wolfssl_ecc_x25519": { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "wolfssl_ecc_x448": { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "wolfssl_ffdhe_2048": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }

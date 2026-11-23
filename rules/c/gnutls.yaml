@@ -1,0 +1,130 @@
+module: [gnutls]
+rules:
+  - id: gnutls-hash
+    functions: [gnutls_hash_fast]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values: &digests
+      "gnutls_dig_sha256": { algorithm: SHA-256, status: observed-resistant }
+      "gnutls_dig_sha384": { algorithm: SHA-384, status: observed-resistant }
+      "gnutls_dig_sha512": { algorithm: SHA-512, status: observed-resistant }
+      "gnutls_dig_sha3_256": { algorithm: SHA3-256, status: observed-resistant }
+      "gnutls_dig_sha3_384": { algorithm: SHA3-384, status: observed-resistant }
+      "gnutls_dig_sha3_512": { algorithm: SHA3-512, status: observed-resistant }
+      "gnutls_dig_shake_256": { algorithm: SHAKE256, status: observed-resistant }
+      "gnutls_dig_sha224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "gnutls_dig_sha3_224": { algorithm: SHA3-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "gnutls_dig_shake_128": { algorithm: SHAKE128, status: needs-review, note: "128-bit security level; a quantum computer reduces its margin. Review migration policy." }
+      "gnutls_dig_sha1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "gnutls_dig_md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "gnutls_dig_md5_sha1": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "gnutls_dig_rmd160": { algorithm: RIPEMD-160, status: needs-review, note: "An old 160-bit hash; replace with SHA-256 or stronger." }
+  - id: gnutls-hash-init
+    functions: [gnutls_hash_init]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *digests
+  - id: gnutls-hmac
+    functions: [gnutls_hmac_fast]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values: &macs
+      "gnutls_mac_sha256": { algorithm: HMAC-SHA-256, status: observed-resistant }
+      "gnutls_mac_sha384": { algorithm: HMAC-SHA-384, status: observed-resistant }
+      "gnutls_mac_sha512": { algorithm: HMAC-SHA-512, status: observed-resistant }
+      "gnutls_mac_sha3_256": { algorithm: HMAC-SHA3-256, status: observed-resistant }
+      "gnutls_mac_sha3_384": { algorithm: HMAC-SHA3-384, status: observed-resistant }
+      "gnutls_mac_sha3_512": { algorithm: HMAC-SHA3-512, status: observed-resistant }
+      "gnutls_mac_aes_cmac_256": { algorithm: AES-256-CMAC, status: observed-resistant }
+      "gnutls_mac_aes_gmac_256": { algorithm: AES-256-GMAC, status: observed-resistant }
+      "gnutls_mac_sha224": { algorithm: HMAC-SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "gnutls_mac_aes_cmac_128": { algorithm: AES-128-CMAC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "gnutls_mac_aes_gmac_128": { algorithm: AES-128-GMAC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "gnutls_mac_sha1": { algorithm: HMAC-SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "gnutls_mac_md5": { algorithm: HMAC-MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+  - id: gnutls-hmac-init
+    functions: [gnutls_hmac_init]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *macs
+  - id: gnutls-cipher
+    functions: [gnutls_cipher_init, gnutls_aead_cipher_init]
+    category: symmetric
+    algorithmFrom: { arg: 1 }
+    values:
+      "gnutls_cipher_aes_256_gcm": { algorithm: AES-256-GCM, status: observed-resistant }
+      "gnutls_cipher_aes_256_cbc": { algorithm: AES-256-CBC, status: observed-resistant }
+      "gnutls_cipher_aes_256_ccm": { algorithm: AES-256-CCM, status: observed-resistant }
+      "gnutls_cipher_aes_256_siv": { algorithm: AES-256-SIV, status: observed-resistant }
+      "gnutls_cipher_aes_256_xts": { algorithm: AES-256-XTS, status: observed-resistant }
+      "gnutls_cipher_aes_192_gcm": { algorithm: AES-192-GCM, status: observed-resistant }
+      "gnutls_cipher_aes_192_cbc": { algorithm: AES-192-CBC, status: observed-resistant }
+      "gnutls_cipher_aes_128_gcm": { algorithm: AES-128-GCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "gnutls_cipher_aes_128_cbc": { algorithm: AES-128-CBC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "gnutls_cipher_aes_128_ccm": { algorithm: AES-128-CCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "gnutls_cipher_chacha20_poly1305": { algorithm: ChaCha20-Poly1305, status: observed-resistant }
+      "gnutls_cipher_3des_cbc": { algorithm: 3DES, status: needs-review, note: "Classically weak and deprecated; migrate." }
+      "gnutls_cipher_arcfour_128": { algorithm: RC4, status: needs-review, note: "Broken even against ordinary computers; replace." }
+      "gnutls_cipher_des_cbc": { algorithm: DES, status: needs-review, note: "Broken even against ordinary computers; replace." }
+  - id: gnutls-keygen
+    functions: [gnutls_privkey_generate, gnutls_privkey_generate2, gnutls_x509_privkey_generate, gnutls_x509_privkey_generate2]
+    category: keygen
+    algorithmFrom: { arg: 1 }
+    values:
+      "gnutls_pk_rsa": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_rsa_pss": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_rsa_oaep": { algorithm: RSA-OAEP, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_dsa": { algorithm: DSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_dh": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_ecdsa": { algorithm: EC, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_ec": { algorithm: EC, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_ecdh_x25519": { algorithm: X25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_ecdh_x448": { algorithm: X448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_eddsa_ed25519": { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_eddsa_ed448": { algorithm: Ed448, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "gnutls_pk_mlkem768": { algorithm: ML-KEM-768, status: observed-resistant }
+      "gnutls_pk_mlkem1024": { algorithm: ML-KEM-1024, status: observed-resistant }
+      "gnutls_pk_mldsa44": { algorithm: ML-DSA-44, status: observed-resistant }
+      "gnutls_pk_mldsa65": { algorithm: ML-DSA-65, status: observed-resistant }
+      "gnutls_pk_mldsa87": { algorithm: ML-DSA-87, status: observed-resistant }
+  - id: gnutls-sign
+    functions: [gnutls_privkey_sign_data2, gnutls_privkey_sign_hash2, gnutls_pubkey_verify_data2, gnutls_pubkey_verify_hash2]
+    category: signature
+    algorithmFrom: { arg: 1 }
+    values:
+      "gnutls_sign_rsa_sha256": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_rsa_sha384": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_rsa_sha512": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_rsa_sha1": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm), and SHA-1 is weak even today. Plan to replace it." }
+      "gnutls_sign_rsa_pss_sha256": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_rsa_pss_rsae_sha256": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_ecdsa_sha256": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_ecdsa_sha384": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_ecdsa_secp256r1_sha256": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_ecdsa_secp384r1_sha384": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_dsa_sha256": { algorithm: DSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_eddsa_ed25519": { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_eddsa_ed448": { algorithm: Ed448, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "gnutls_sign_mldsa44": { algorithm: ML-DSA-44, status: observed-resistant }
+      "gnutls_sign_mldsa65": { algorithm: ML-DSA-65, status: observed-resistant }
+      "gnutls_sign_mldsa87": { algorithm: ML-DSA-87, status: observed-resistant }
+  - id: gnutls-pkey-operation
+    functions: [gnutls_privkey_sign_data, gnutls_privkey_sign_hash, gnutls_pubkey_encrypt_data, gnutls_privkey_decrypt_data]
+    category: unknown
+    status: unresolved
+    note: "Asymmetric operation; the key type is set where the key is created or loaded, which may be elsewhere."
+  - id: gnutls-key-material
+    functions: [gnutls_certificate_set_x509_key_file, gnutls_certificate_set_x509_key_file2, gnutls_certificate_set_x509_key_mem, gnutls_certificate_set_x509_key_mem2, gnutls_certificate_set_x509_simple_pkcs12_file, gnutls_privkey_import_x509_raw, gnutls_privkey_import_url, gnutls_x509_privkey_import, gnutls_x509_privkey_import2]
+    category: keygen
+    status: unresolved
+    note: "Key type depends on the key or certificate loaded at run time; review."
+  - id: gnutls-tls-priority
+    functions: [gnutls_priority_init, gnutls_priority_init2, gnutls_priority_set_direct, gnutls_set_default_priority, gnutls_set_default_priority_append]
+    category: key-exchange
+    status: unresolved
+    note: "TLS settings, including the key-exchange groups. Recent GnuTLS 3.8 versions can offer the hybrid post-quantum group X25519-MLKEM768; check the GnuTLS version and the priority string."
+  - id: gnutls-random
+    functions: [gnutls_rnd]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant

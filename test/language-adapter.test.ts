@@ -3,11 +3,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { finding } from '../src/core/finding.ts';
+import { UNRESOLVED_ALGORITHM_NOTE, finding } from '../src/core/finding.ts';
 import type { LanguageAdapter } from '../src/core/language.ts';
 import { loadRules } from '../src/core/rules.ts';
 import { scan } from '../src/core/scan.ts';
 import type { ModuleRules } from '../src/core/types.ts';
+import { languages } from '../src/languages/index.ts';
 import { javascript } from '../src/languages/javascript/adapter.ts';
 
 // A toy language ("toy", files ending .toy) that shares no code with the JavaScript adapter. If the core needed to know
@@ -23,7 +24,7 @@ const toy: LanguageAdapter = {
       const match = /^hash (\w+)/.exec(line);
       if (!match) return [];
       return match[1] === 'dynamic'
-        ? [finding(file, index + 1, 'toy-hash', 'hash', null, 'unresolved', 'The algorithm comes from a value the tool cannot read here, such as a variable or a setting; check this line by hand.')]
+        ? [finding(file, index + 1, 'toy-hash', 'hash', null, 'unresolved', UNRESOLVED_ALGORITHM_NOTE)]
         : [finding(file, index + 1, 'toy-hash', 'hash', match[1].toUpperCase(), 'observed-resistant')];
     });
   },
@@ -75,7 +76,7 @@ describe('adding a language needs only an adapter and a rules folder', () => {
     expect(loadRules(pathToFileURL(dir + '/')).map((group) => group.language)).toEqual(['javascript', 'python']);
   });
 
-  it('loads every bundled rule file under the language of its folder', () => {
-    expect(new Set(loadRules().map((group) => group.language))).toEqual(new Set(['javascript', 'c']));
+  it('has a registered adapter for every rules/<language>/ folder, and rules for every adapter', () => {
+    expect(new Set(loadRules().map((group) => group.language))).toEqual(new Set(languages.map((adapter) => adapter.id)));
   });
 });

@@ -1,0 +1,214 @@
+module: [mbedtls]
+rules:
+  - id: mbedtls-sha256
+    functions: [mbedtls_sha256]
+    category: hash
+    algorithmFrom: { arg: 3 }
+    values: &sha256
+      "0": { algorithm: SHA-256, status: observed-resistant }
+      "1": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+  - id: mbedtls-sha256-starts
+    functions: [mbedtls_sha256_starts]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *sha256
+  - id: mbedtls-sha512
+    functions: [mbedtls_sha512]
+    category: hash
+    algorithmFrom: { arg: 3 }
+    values: &sha512
+      "0": { algorithm: SHA-512, status: observed-resistant }
+      "1": { algorithm: SHA-384, status: observed-resistant }
+  - id: mbedtls-sha512-starts
+    functions: [mbedtls_sha512_starts]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *sha512
+  - id: mbedtls-sha3
+    functions: [mbedtls_sha3]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values: &sha3
+      "mbedtls_sha3_224": { algorithm: SHA3-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "mbedtls_sha3_256": { algorithm: SHA3-256, status: observed-resistant }
+      "mbedtls_sha3_384": { algorithm: SHA3-384, status: observed-resistant }
+      "mbedtls_sha3_512": { algorithm: SHA3-512, status: observed-resistant }
+  - id: mbedtls-sha3-starts
+    functions: [mbedtls_sha3_starts]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *sha3
+  - id: mbedtls-sha1
+    functions: [mbedtls_sha1, mbedtls_sha1_starts]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: mbedtls-md5
+    functions: [mbedtls_md5, mbedtls_md5_starts]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "Classically weak; migrate regardless of quantum risk."
+  - id: mbedtls-ripemd160
+    functions: [mbedtls_ripemd160, mbedtls_ripemd160_starts]
+    category: hash
+    algorithm: RIPEMD-160
+    status: needs-review
+    note: "An old 160-bit hash; replace with SHA-256 or stronger."
+  - id: mbedtls-md-info
+    functions: [mbedtls_md_info_from_type, mbedtls_md_info_from_string]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values:
+      "mbedtls_md_sha256": { algorithm: SHA-256, status: observed-resistant }
+      "mbedtls_md_sha384": { algorithm: SHA-384, status: observed-resistant }
+      "mbedtls_md_sha512": { algorithm: SHA-512, status: observed-resistant }
+      "mbedtls_md_sha3_256": { algorithm: SHA3-256, status: observed-resistant }
+      "mbedtls_md_sha3_384": { algorithm: SHA3-384, status: observed-resistant }
+      "mbedtls_md_sha3_512": { algorithm: SHA3-512, status: observed-resistant }
+      "mbedtls_md_sha224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "mbedtls_md_sha3_224": { algorithm: SHA3-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "mbedtls_md_sha1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "mbedtls_md_md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "mbedtls_md_ripemd160": { algorithm: RIPEMD-160, status: needs-review, note: "An old 160-bit hash; replace with SHA-256 or stronger." }
+      "sha256": { algorithm: SHA-256, status: observed-resistant }
+      "sha384": { algorithm: SHA-384, status: observed-resistant }
+      "sha512": { algorithm: SHA-512, status: observed-resistant }
+      "sha3-256": { algorithm: SHA3-256, status: observed-resistant }
+      "sha3-384": { algorithm: SHA3-384, status: observed-resistant }
+      "sha3-512": { algorithm: SHA3-512, status: observed-resistant }
+      "sha224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha3-224": { algorithm: SHA3-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "sha1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "sha": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "ripemd160": { algorithm: RIPEMD-160, status: needs-review, note: "An old 160-bit hash; replace with SHA-256 or stronger." }
+  - id: mbedtls-cipher-info
+    functions: [mbedtls_cipher_info_from_type]
+    category: symmetric
+    algorithmFrom: { arg: 0 }
+    values:
+      "mbedtls_cipher_aes_256_gcm": { algorithm: AES-256-GCM, status: observed-resistant }
+      "mbedtls_cipher_aes_256_cbc": { algorithm: AES-256-CBC, status: observed-resistant }
+      "mbedtls_cipher_aes_256_ctr": { algorithm: AES-256-CTR, status: observed-resistant }
+      "mbedtls_cipher_aes_256_ccm": { algorithm: AES-256-CCM, status: observed-resistant }
+      "mbedtls_cipher_aes_192_gcm": { algorithm: AES-192-GCM, status: observed-resistant }
+      "mbedtls_cipher_aes_192_cbc": { algorithm: AES-192-CBC, status: observed-resistant }
+      "mbedtls_cipher_aes_128_gcm": { algorithm: AES-128-GCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "mbedtls_cipher_aes_128_cbc": { algorithm: AES-128-CBC, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "mbedtls_cipher_aes_128_ctr": { algorithm: AES-128-CTR, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "mbedtls_cipher_aes_128_ccm": { algorithm: AES-128-CCM, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "mbedtls_cipher_aes_256_ecb": { algorithm: AES-256-ECB, status: needs-review, note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM." }
+      "mbedtls_cipher_aes_128_ecb": { algorithm: AES-128-ECB, status: needs-review, note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM." }
+      "mbedtls_cipher_chacha20_poly1305": { algorithm: ChaCha20-Poly1305, status: observed-resistant }
+      "mbedtls_cipher_des_ede3_cbc": { algorithm: 3DES, status: needs-review, note: "Classically weak and deprecated; migrate." }
+      "mbedtls_cipher_des_cbc": { algorithm: DES, status: needs-review, note: "Broken even against ordinary computers; replace." }
+  - id: mbedtls-aes-setkey
+    functions: [mbedtls_aes_setkey_enc, mbedtls_aes_setkey_dec]
+    category: symmetric
+    algorithmFrom: { arg: 2 }
+    values:
+      "128": { algorithm: AES-128, status: needs-review, note: "AES-128 has reduced quantum security margin; review migration policy." }
+      "192": { algorithm: AES-192, status: observed-resistant }
+      "256": { algorithm: AES-256, status: observed-resistant }
+  - id: mbedtls-chachapoly
+    functions: [mbedtls_chachapoly_setkey]
+    category: symmetric
+    algorithm: ChaCha20-Poly1305
+    status: observed-resistant
+  - id: mbedtls-3des
+    functions: [mbedtls_des3_set3key_enc, mbedtls_des3_set3key_dec, mbedtls_des3_set2key_enc, mbedtls_des3_set2key_dec]
+    category: symmetric
+    algorithm: 3DES
+    status: needs-review
+    note: "Classically weak and deprecated; migrate."
+  - id: mbedtls-des
+    functions: [mbedtls_des_setkey_enc, mbedtls_des_setkey_dec]
+    category: symmetric
+    algorithm: DES
+    status: needs-review
+    note: "Broken even against ordinary computers; replace."
+  - id: mbedtls-rsa-keygen
+    functions: [mbedtls_rsa_gen_key]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: mbedtls-rsa-encrypt
+    functions: [mbedtls_rsa_pkcs1_encrypt, mbedtls_rsa_pkcs1_decrypt, mbedtls_rsa_rsaes_oaep_encrypt, mbedtls_rsa_rsaes_oaep_decrypt]
+    category: encryption
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: mbedtls-rsa-sign
+    functions: [mbedtls_rsa_pkcs1_sign, mbedtls_rsa_pkcs1_verify, mbedtls_rsa_rsassa_pss_sign, mbedtls_rsa_rsassa_pss_verify]
+    category: signature
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: mbedtls-ec-keygen
+    functions: [mbedtls_ecp_gen_key, mbedtls_ecp_gen_keypair, mbedtls_ecp_group_load]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+    note: "Every curve Mbed TLS offers is a classical elliptic curve. A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: mbedtls-ecdsa
+    functions: [mbedtls_ecdsa_genkey, mbedtls_ecdsa_sign, mbedtls_ecdsa_verify, mbedtls_ecdsa_write_signature, mbedtls_ecdsa_read_signature]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it."
+  - id: mbedtls-ecdh
+    functions: [mbedtls_ecdh_gen_public, mbedtls_ecdh_compute_shared, mbedtls_ecdh_make_public, mbedtls_ecdh_calc_secret]
+    category: key-exchange
+    algorithm: ECDH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: mbedtls-dh
+    functions: [mbedtls_dhm_make_params, mbedtls_dhm_make_public, mbedtls_dhm_calc_secret]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+    note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type."
+  - id: mbedtls-lms
+    functions: [mbedtls_lms_verify]
+    category: signature
+    algorithm: LMS
+    status: observed-resistant
+    note: "LMS is a hash-based signature approved by NIST (SP 800-208). Each private key can sign only a fixed number of times."
+  - id: mbedtls-pk-type
+    functions: [mbedtls_pk_info_from_type]
+    category: keygen
+    algorithmFrom: { arg: 0 }
+    values:
+      "mbedtls_pk_rsa": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "mbedtls_pk_rsassa_pss": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "mbedtls_pk_eckey": { algorithm: EC, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "mbedtls_pk_eckey_dh": { algorithm: ECDH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "mbedtls_pk_ecdsa": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+  - id: mbedtls-pk-operation
+    functions: [mbedtls_pk_sign, mbedtls_pk_verify, mbedtls_pk_encrypt, mbedtls_pk_decrypt, mbedtls_pk_sign_ext, mbedtls_pk_verify_ext]
+    category: unknown
+    status: unresolved
+    note: "Asymmetric operation; the key type is set where the key is created or loaded, which may be elsewhere."
+  - id: mbedtls-key-material
+    functions: [mbedtls_pk_parse_key, mbedtls_pk_parse_keyfile, mbedtls_pk_parse_public_key, mbedtls_pk_parse_public_keyfile, mbedtls_ssl_conf_own_cert]
+    category: keygen
+    status: unresolved
+    note: "Key type depends on the key or certificate loaded at run time; review."
+  - id: mbedtls-random
+    functions: [mbedtls_ctr_drbg_random, mbedtls_hmac_drbg_random]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
+  - id: mbedtls-tls-config
+    functions: [mbedtls_ssl_config_defaults]
+    category: key-exchange
+    status: unresolved
+    note: "TLS key exchange: Mbed TLS 3.6 offers only classical groups (elliptic curves and Diffie-Hellman), none of them post-quantum. Check the Mbed TLS version and any configured groups."
+  - id: mbedtls-tls-groups
+    functions: [mbedtls_ssl_conf_groups, mbedtls_ssl_conf_curves]
+    category: key-exchange
+    status: unresolved
+    note: "Configures TLS key-exchange groups; check whether a post-quantum group is available and listed."

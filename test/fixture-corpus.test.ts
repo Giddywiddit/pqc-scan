@@ -1,6 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { extname } from 'node:path';
+import { extname, join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
 import { loadLanguages } from '../src/core/scan.ts';
@@ -14,8 +13,15 @@ beforeAll(() => loadLanguages());
 // `/* expect: ... */` is for lines that cannot end in a // comment, such as a macro line ending in a backslash.
 const marker = /(?:\/\/ expect: (.+)$|\/\* expect: (.+?) \*\/)/;
 
-for (const directory of ['resolve', 'issues', 'c']) {
-  const base = new URL(`./fixtures/${directory}/`, import.meta.url).pathname;
+// Every fixture folder with at least one marked file is a corpus, so a new language's folder is picked up on its own.
+const root = new URL('./fixtures/', import.meta.url).pathname;
+const corpora = readdirSync(root).filter((directory) => readdirSync(join(root, directory), { withFileTypes: true })
+  .some((entry) => entry.isFile() && readFileSync(join(root, directory, entry.name), 'utf8').includes('expect: ')));
+
+it('finds the fixture corpora', () => expect(corpora).toEqual(expect.arrayContaining(['c', 'issues', 'resolve'])));
+
+for (const directory of corpora) {
+  const base = join(root, directory);
   describe(`fixture corpus: ${directory}`, () => {
     for (const name of readdirSync(base).filter((file) => languages.some((adapter) => adapter.extensions.includes(extname(file)))).sort()) {
       it(name, () => {

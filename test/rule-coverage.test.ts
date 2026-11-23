@@ -14,14 +14,15 @@ const nested = (path: string, value: string): string => path.split('.').reduceRi
 
 // Every function and every algorithm value in every rule file is exercised by a synthesized call.
 const cases: Case[] = [];
-// How a call to `fn` is written in each language. C constants (EVP_PKEY_RSA, NID_sha256) are passed as bare names.
+// How a call to `fn` is written in each language. In C, a key with an underscore is a constant (EVP_PKEY_RSA,
+// PSA_ALG_SHA_256) and is passed as a bare upper-case name; other keys are strings or numbers.
 const callIn: Record<string, (module: string, fn: string, args: string[]) => string> = {
   javascript: (module, fn, args) => `import * as m from ${quote(module)};\nm.${fn}(${args.join(', ')});`,
   c: (_module, fn, args) => `void f(void) { ${fn}(${args.join(', ')}); }`,
 };
 const valueIn: Record<string, (key: string) => string> = {
   javascript: quote,
-  c: (key) => (/^(evp_|nid_)/.test(key) ? key.toUpperCase() : quote(key)),
+  c: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
 };
 for (const group of groups) {
   const { language } = group;
@@ -60,6 +61,11 @@ describe('rule files', () => {
     }
   });
 
+  it('lists each C function in only one rule file (a C call does not name its library, so the first file would win)', () => {
+    const functions = groups.filter((group) => group.language === 'c').flatMap((group) => group.rules.flatMap((rule) => rule.functions));
+    expect(functions.filter((fn, index) => functions.indexOf(fn) !== index)).toEqual([]);
+  });
+
   it('gives every unresolved or needs-review value an explanatory note', () => {
     const missing = groups.flatMap((group) => group.rules.flatMap((rule) => Object.entries(rule.values ?? {})
       .filter(([, value]) => (value.status === 'unresolved' || value.status === 'needs-review') && !value.note).map(([key]) => `${rule.id}:${key}`)));
@@ -67,7 +73,7 @@ describe('rule files', () => {
   });
 
   it.each(cases.map((item) => [item.name, item] as const))('%s', (_name, item) => {
-    const rules = loadRules().filter((group) => group.language === item.language);
+    const rules = groups.filter((group) => group.language === item.language);
     const findings = adapterFor(item.language).scanSource(item.code, 'f', rules).map(({ ruleId, algorithm, status }) => ({ ruleId, algorithm, status }));
     expect(findings).toEqual(item.expected);
   });

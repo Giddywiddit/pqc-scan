@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -135,7 +135,10 @@ describe('CLI contract', () => {
     const result = cli(fixture('c'), '--json');
     expect(result.status).toBe(1);
     const files = new Set(JSON.parse(result.stdout).findings.map((item: { file: string }) => item.file));
-    expect(files).toEqual(new Set(['legacy-openssl.c', 'libsodium.c', 'nested-and-constants.c', 'openssl3-keygen.c', 'preprocessor.c', 'tls-and-keys.h']));
+    // Every fixture that expects a finding is reported by the CLI, and no other file is.
+    const expected = readdirSync(fixture('c')).filter((name) => readFileSync(join(fixture('c'), name), 'utf8').includes('expect: '));
+    expect(expected.length).toBeGreaterThan(5);
+    expect(files).toEqual(new Set(expected));
   });
 
   it('fails clearly for a nonexistent path', () => {

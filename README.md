@@ -102,9 +102,12 @@ The tool exits with status 0 (the "success" signal that automated checks look fo
   - WebCrypto (`crypto.subtle`), the cryptography toolkit built into web browsers and also available in Node.js.
   - The `jsonwebtoken` and `jws` packages, which create and check login tokens.
 - **Cryptography libraries for C:**
-  - OpenSSL, the most widely used cryptography library, both the older style (`RSA_generate_key_ex`, `SHA256`) and the OpenSSL 3 style where the algorithm is a name (`EVP_PKEY_Q_keygen(..., "ML-KEM-768")`).
+  - OpenSSL, the most widely used cryptography library, both the older style (`RSA_generate_key_ex`, `SHA256`) and the OpenSSL 3 style where the algorithm is a name (`EVP_PKEY_Q_keygen(..., "ML-KEM-768")`). Libraries that copy OpenSSL's function names (BoringSSL, LibreSSL, AWS-LC, and wolfSSL's OpenSSL compatibility layer) are matched as OpenSSL.
   - libsodium, including its post-quantum ML-KEM-768 and X-Wing functions.
-  - Every function and algorithm name in the C rules was checked against the real OpenSSL and libsodium header files.
+  - Mbed TLS 3.6 (`mbedtls_...`) and the PSA Crypto API (`psa_...`), which Mbed TLS 3.6 and 4 and Trusted Firmware-M provide. Both are common on small embedded devices.
+  - wolfSSL (`wc_...` and `wolfSSL_...`), including its ML-KEM, ML-DSA and SLH-DSA functions and the hybrid TLS group `X25519MLKEM768`.
+  - GnuTLS (`gnutls_...`), including its ML-KEM and ML-DSA key types.
+  - Every function and constant name in the C rules was checked against the real header files of each library.
 - **Ways of writing the code:** renamed imports (`import { createHash as h } from 'crypto'`), the algorithm stored in a constant (`const name = 'sha256'`), `require('crypto')`, and a function copied into another variable before it is called.
 
 ## What it cannot see
@@ -113,7 +116,7 @@ The tool reads code without running it. That means it has blind spots. Read this
 
 - **A clean result does not mean "no cryptography".** The tool misses cryptography that is reached in a way it cannot follow: loading a library whose name is built while the program runs (`require(someVariable)`), running text as code (`eval`), or hiding the call behind more than one level of helper files.
 - **Other languages are not covered.** C++, Go, Rust, Python, Java and C# are not scanned yet. More languages are planned.
-- **Other cryptography libraries are not covered.** Only the libraries listed above. In C that leaves out Mbed TLS, wolfSSL, GnuTLS and the Windows cryptography functions (`BCrypt...`), for example; curl alone makes about 300 calls to those. Libraries that copy OpenSSL's function names (BoringSSL, LibreSSL, AWS-LC) are matched as OpenSSL. Cryptography built into a package you installed is not scanned unless you scan that package's own code.
+- **Other cryptography libraries are not covered.** Only the libraries listed above. In C that leaves out, for example, the Windows cryptography functions (`BCrypt...`), Apple's (`SecKey...`, `CC_SHA256`) and NSS. Cryptography built into a package you installed is not scanned unless you scan that package's own code.
 - **Code split across files is only partly followed.** If a helper file takes the algorithm as an argument, each file that imports the helper gets an ⚠️ note saying so. The tool does not trace which value each caller passes.
 - **In C, a crypto call inside a `#define` macro is reported on the line where the macro is defined**, even if the macro is never used. The tool also reads both sides of every `#if`, because it cannot know which one your build uses.
 - **In C, calls through a function pointer** (`table->hash(data)`) and cryptography a project implements itself under its own function names are not recognised.
@@ -123,9 +126,9 @@ Every limitation above is pinned by an automated test (`test/unsupported.test.ts
 
 ## How we know it is reliable
 
-- **Over 1,000 automated tests** run on every change. They cover every algorithm the tool recognises, code written in unusual styles, and the command-line behaviour.
+- **Over 3,000 automated tests** run on every change. They cover every algorithm the tool recognises, code written in unusual styles, and the command-line behaviour.
 - **Names are checked against the real thing.** Every cipher, hash and key type the tool recognises is checked to exist in Node.js itself, and the login-token algorithm names are checked against the official internet standard (RFC 7518).
-- **Real projects.** During development the tool was run against well-known open-source projects: seven in JavaScript (`jose`, `ssh2`, `node-jsonwebtoken`, `express`, `web-push`, `send` and `webcrypto`) and three in C (`curl`, `nginx` and `OpenSSH`). In the C projects it found every call to an OpenSSL or libsodium function it knows. Its results were compared with a separate text search of the same code. That comparison found and fixed real mistakes, for example a variable named `crypto` in one function hiding crypto calls in a different function of the same file.
+- **Real projects.** During development the tool was run against well-known open-source projects: seven in JavaScript (`jose`, `ssh2`, `node-jsonwebtoken`, `express`, `web-push`, `send` and `webcrypto`) and, in C, `curl`, `nginx`, `OpenSSH` and the example programs and tests of Mbed TLS, wolfSSL and GnuTLS. In the C code it found every call to a library function it knows: about 4,800 calls in total, including 4,221 in wolfSSL's tests, where the code is so full of macros that the parser cannot fully read 90% of the main test file. Its results were compared with a separate text search of the same code. That comparison found and fixed real mistakes, for example a variable named `crypto` in one function hiding crypto calls in a different function of the same file.
 - **Every fixed bug becomes a permanent test** (see `test/fixtures/issues/`).
 
 Which algorithms count as risky is a judgement call. The tool's decisions are written openly in the `rules/` folder so you can read them and disagree with them.
@@ -139,7 +142,7 @@ npm run typecheck   # check the TypeScript code for type errors
 
 How the tests are organised:
 
-- `test/fixtures/resolve`, `test/fixtures/issues` and `test/fixtures/c`: short real source files. A comment such as `// expect: RSA vulnerable` states what the tool must report on that line. A line without such a comment must produce no finding, so both missing and unexpected findings fail the test.
+- `test/fixtures/resolve`, `test/fixtures/issues` and `test/fixtures/c`: short real source files (one per C library). A comment such as `// expect: RSA vulnerable` states what the tool must report on that line. A line without such a comment must produce no finding, so both missing and unexpected findings fail the test.
 - `test/rule-coverage.test.ts`: generates a call for every recognised function and algorithm, so no rule can be added without a test.
 - `test/no-duplicates.test.ts`: one call in the code must never be reported twice.
 - `test/language-adapter.test.ts`: proves the shared core works with a made-up second language that has no JavaScript code in it.
@@ -150,7 +153,7 @@ To teach the tool a new library, add a rule file in `rules/<language>/` (for exa
 
 ### Adding a language
 
-The code is split into a shared core (`src/core/`: walking folders, matching rules, cross-file checks) and one adapter per language (`src/languages/<name>/`). An adapter does one job: read one file and list its cryptography findings. Rules for that language go in `rules/<name>/`. Register the adapter in `src/languages/index.ts` and the core, the output formats and the tests of the shared behaviour work with it unchanged.
+The code is split into a shared core (`src/core/`: walking folders, matching rules, cross-file checks) and one adapter per language (`src/languages/<name>/`). An adapter does one job: read one file and list its cryptography findings. Rules for that language go in `rules/<name>/`. Register the adapter in `src/languages/index.ts` and the core, the output formats and the tests of the shared behaviour work with it unchanged. Then, step by step: tell `test/rule-coverage.test.ts` how a call is written in the new language (one line), so every rule gets a generated test; add marked example files in `test/fixtures/<name>/`, which the fixture test finds on its own; and add a command-line test like the C one in `test/integration.test.ts`. A test fails if a `rules/<name>/` folder has no adapter, or an adapter has no rules.
 
 ## Licence
 

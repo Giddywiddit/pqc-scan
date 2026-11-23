@@ -1,0 +1,116 @@
+# The PSA Crypto API: Mbed TLS 3.6, TF-PSA-Crypto (the crypto part of Mbed TLS 4) and Trusted Firmware-M implement it.
+# Algorithms are macros such as PSA_ALG_SHA_256 or PSA_ALG_ECDSA(PSA_ALG_SHA_256); the outer name is what is matched.
+module: [psa-crypto]
+rules:
+  - id: psa-hash
+    functions: [psa_hash_compute, psa_hash_compare]
+    category: hash
+    algorithmFrom: { arg: 0 }
+    values: &alg
+      "psa_alg_sha_256": { algorithm: SHA-256, status: observed-resistant }
+      "psa_alg_sha_384": { algorithm: SHA-384, status: observed-resistant }
+      "psa_alg_sha_512": { algorithm: SHA-512, status: observed-resistant }
+      "psa_alg_sha3_256": { algorithm: SHA3-256, status: observed-resistant }
+      "psa_alg_sha3_384": { algorithm: SHA3-384, status: observed-resistant }
+      "psa_alg_sha3_512": { algorithm: SHA3-512, status: observed-resistant }
+      "psa_alg_shake256_512": { algorithm: SHAKE256, status: observed-resistant }
+      "psa_alg_sha_224": { algorithm: SHA-224, status: needs-review, note: "112-bit collision strength; review against your policy." }
+      "psa_alg_sha_1": { algorithm: SHA-1, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "psa_alg_md5": { algorithm: MD5, status: needs-review, note: "Classically weak; migrate regardless of quantum risk." }
+      "psa_alg_ripemd160": { algorithm: RIPEMD-160, status: needs-review, note: "An old 160-bit hash; replace with SHA-256 or stronger." }
+      "psa_alg_hmac": { algorithm: HMAC, status: unresolved, note: "Hash function is not resolved; review." }
+      "psa_alg_cmac": { algorithm: AES-CMAC, status: unresolved, note: "The AES key size is set on the key (psa_set_key_bits); review." }
+      "psa_alg_hkdf": { algorithm: HKDF, status: unresolved, note: "Hash function is not resolved; review." }
+      "psa_alg_hkdf_extract": { algorithm: HKDF, status: unresolved, note: "Hash function is not resolved; review." }
+      "psa_alg_hkdf_expand": { algorithm: HKDF, status: unresolved, note: "Hash function is not resolved; review." }
+      "psa_alg_pbkdf2_hmac": { algorithm: PBKDF2, status: unresolved, note: "Hash function is not resolved; review." }
+      "psa_alg_gcm": { algorithm: GCM, status: unresolved, note: "The cipher (usually AES) and its key size are set on the key (psa_set_key_type, psa_set_key_bits); review." }
+      "psa_alg_ccm": { algorithm: CCM, status: unresolved, note: "The cipher (usually AES) and its key size are set on the key (psa_set_key_type, psa_set_key_bits); review." }
+      "psa_alg_cbc_no_padding": { algorithm: CBC, status: unresolved, note: "The cipher (usually AES) and its key size are set on the key (psa_set_key_type, psa_set_key_bits); review." }
+      "psa_alg_cbc_pkcs7": { algorithm: CBC, status: unresolved, note: "The cipher (usually AES) and its key size are set on the key (psa_set_key_type, psa_set_key_bits); review." }
+      "psa_alg_ctr": { algorithm: CTR, status: unresolved, note: "The cipher (usually AES) and its key size are set on the key (psa_set_key_type, psa_set_key_bits); review." }
+      "psa_alg_ecb_no_padding": { algorithm: ECB, status: needs-review, note: "ECB mode leaks patterns in the data; replace with an authenticated mode such as GCM." }
+      "psa_alg_chacha20_poly1305": { algorithm: ChaCha20-Poly1305, status: observed-resistant }
+      "psa_alg_ecdsa": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_ecdsa_any": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_deterministic_ecdsa": { algorithm: ECDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_pure_eddsa": { algorithm: EdDSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_ed25519ph": { algorithm: Ed25519, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_ed448ph": { algorithm: Ed448, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_rsa_pkcs1v15_sign": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_rsa_pkcs1v15_sign_raw": { algorithm: RSA, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_rsa_pss": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_rsa_pss_any_salt": { algorithm: RSA-PSS, status: vulnerable, note: "A quantum computer could forge signatures made with this key type (using Shor's algorithm). Plan to replace it." }
+      "psa_alg_rsa_pkcs1v15_crypt": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_alg_rsa_oaep": { algorithm: RSA-OAEP, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_alg_ecdh": { algorithm: ECDH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_alg_ffdh": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+  - id: psa-raw-key-agreement
+    functions: [psa_raw_key_agreement]
+    category: key-exchange
+    algorithmFrom: { arg: 0 }
+    values: *alg
+  - id: psa-hash-setup
+    functions: [psa_hash_setup]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *alg
+  - id: psa-mac
+    functions: [psa_mac_compute, psa_mac_verify]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *alg
+  - id: psa-mac-setup
+    functions: [psa_mac_sign_setup, psa_mac_verify_setup]
+    category: hash
+    algorithmFrom: { arg: 2 }
+    values: *alg
+  - id: psa-cipher
+    functions: [psa_cipher_encrypt, psa_cipher_decrypt, psa_aead_encrypt, psa_aead_decrypt]
+    category: symmetric
+    algorithmFrom: { arg: 1 }
+    values: *alg
+  - id: psa-cipher-setup
+    functions: [psa_cipher_encrypt_setup, psa_cipher_decrypt_setup, psa_aead_encrypt_setup, psa_aead_decrypt_setup]
+    category: symmetric
+    algorithmFrom: { arg: 2 }
+    values: *alg
+  - id: psa-sign
+    functions: [psa_sign_hash, psa_verify_hash, psa_sign_message, psa_verify_message]
+    category: signature
+    algorithmFrom: { arg: 1 }
+    values: *alg
+  - id: psa-asymmetric-encrypt
+    functions: [psa_asymmetric_encrypt, psa_asymmetric_decrypt]
+    category: encryption
+    algorithmFrom: { arg: 1 }
+    values: *alg
+  - id: psa-key-derivation
+    functions: [psa_key_derivation_setup]
+    category: hash
+    algorithmFrom: { arg: 1 }
+    values: *alg
+  - id: psa-key-agreement
+    functions: [psa_key_agreement]
+    category: key-exchange
+    algorithmFrom: { arg: 3 }
+    values: *alg
+  - id: psa-key-type
+    functions: [psa_set_key_type]
+    category: keygen
+    algorithmFrom: { arg: 1 }
+    values:
+      "psa_key_type_rsa_key_pair": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_key_type_rsa_public_key": { algorithm: RSA, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_key_type_ecc_key_pair": { algorithm: EC, status: vulnerable, note: "Every curve the PSA API offers (including Curve25519 and Ed25519) is a classical elliptic curve. A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_key_type_ecc_public_key": { algorithm: EC, status: vulnerable, note: "Every curve the PSA API offers (including Curve25519 and Ed25519) is a classical elliptic curve. A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_key_type_dh_key_pair": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_key_type_dh_public_key": { algorithm: DH, status: vulnerable, note: "A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type." }
+      "psa_key_type_aes": { algorithm: AES, status: unresolved, note: "The key size is set with psa_set_key_bits; 128-bit AES needs review, 192 and 256 are fine." }
+      "psa_key_type_chacha20": { algorithm: ChaCha20, status: observed-resistant }
+      "psa_key_type_des": { algorithm: DES, status: needs-review, note: "Classically weak and deprecated; migrate." }
+  - id: psa-random
+    functions: [psa_generate_random]
+    category: random
+    algorithm: CSPRNG
+    status: observed-resistant
