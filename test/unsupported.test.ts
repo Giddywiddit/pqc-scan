@@ -1,5 +1,9 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
+import { scan as scanFolder } from '../src/core/scan.ts';
 import { scanSource } from '../src/languages/javascript/adapter.ts';
 
 const rules = loadRules();
@@ -70,5 +74,26 @@ describe('not detected (documented limitation)', () => {
     ['eval', "eval(\"require('crypto').createHash('md5')\");"],
   ])('%s', (_name, code) => {
     expect(scan(code)).toEqual([]);
+  });
+});
+
+describe('documented limits that need whole folders', () => {
+  const folder = (files: Record<string, string>) => {
+    const dir = mkdtempSync(join(tmpdir(), 'pqc-limits-'));
+    for (const [name, text] of Object.entries(files)) writeFileSync(join(dir, name), text);
+    return dir;
+  };
+
+  it('notes only the files that import a helper directly, not the files that import those', () => {
+    const findings = scanFolder(folder({
+      'helper.ts': "import { createHash } from 'crypto';\nexport const h = (name: string) => createHash(name);\n",
+      'middle.ts': "import { h } from './helper';\nexport const m = (name: string) => h(name);\n",
+      'top.ts': "import { m } from './middle';\nm('md5');\n",
+    }), loadRules());
+    expect(findings.map((item) => `${item.file} ${item.ruleId}`)).toEqual(['helper.ts node-hash', 'middle.ts crypto-via-local-module']);
+  });
+
+  it('does not read C++ files yet', () => {
+    expect(scanFolder(folder({ 'hash.cpp': 'void f() { SHA256(d, n, out); }\n', 'hash.cc': 'void f() { SHA256(d, n, out); }\n' }), loadRules())).toEqual([]);
   });
 });

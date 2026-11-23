@@ -6,15 +6,15 @@ Files: `.c` and `.h`. The code is read with the official tree-sitter C grammar (
 
 | Library | Rule file | What is matched |
 |---|---|---|
-| OpenSSL 1.x and 3.x | `openssl.yaml` | The older functions (`RSA_generate_key_ex`, `SHA256`) and the OpenSSL 3 style where the algorithm is a name or constant (`EVP_PKEY_Q_keygen(..., "ML-KEM-768")`, `EVP_PKEY_CTX_new_id(EVP_PKEY_ED25519, ...)`), plus where TLS is set up and which key-exchange groups are configured. |
+| OpenSSL | `openssl.yaml` | The older functions (`RSA_generate_key_ex`, `SHA256`) and the OpenSSL 3 style where the algorithm is a name or constant (`EVP_PKEY_Q_keygen(..., "ML-KEM-768")`, `EVP_PKEY_CTX_new_id(EVP_PKEY_ED25519, ...)`), plus where TLS is set up and which key-exchange groups are configured. |
 | BoringSSL, LibreSSL, AWS-LC, wolfSSL's OpenSSL compatibility layer | `openssl.yaml` | These copy OpenSSL's function names, so they are matched as OpenSSL. |
-| libsodium | `libsodium.yaml` | Every main function family, including the post-quantum ML-KEM-768 and X-Wing key exchange. |
+| libsodium | `libsodium.yaml` | Key exchange (`crypto_box`, `crypto_kx`, `crypto_scalarmult`), Ed25519 signatures, secret-key encryption, hashing, password hashing (Argon2id), message authentication and random numbers, plus the post-quantum ML-KEM-768 and X-Wing key exchange. |
 | Mbed TLS 3.6 | `mbedtls.yaml` | `mbedtls_...` hashes, ciphers, RSA, elliptic curves, Diffie-Hellman, key types (`MBEDTLS_PK_*`) and TLS setup. |
 | PSA Crypto API (Mbed TLS 3.6 and 4, TF-PSA-Crypto, Trusted Firmware-M) | `psa-crypto.yaml` | `psa_...` calls, with the algorithm read from macros such as `PSA_ALG_SHA_256` or `PSA_ALG_ECDSA(PSA_ALG_SHA_256)`, and key types from `psa_set_key_type`. |
 | wolfSSL | `wolfssl.yaml` | `wc_...` functions, including ML-KEM, ML-DSA, SLH-DSA, LMS and XMSS, and `wolfSSL_...` TLS setup, including key shares such as the hybrid group `X25519MLKEM768`. |
-| GnuTLS 3.8 | `gnutls.yaml` | `gnutls_...` hashing, HMAC, ciphers, key generation and signing, with the algorithm read from `GNUTLS_*` constants, including the ML-KEM and ML-DSA key types. |
+| GnuTLS | `gnutls.yaml` | `gnutls_...` hashing, HMAC, ciphers, key generation and signing, with the algorithm read from `GNUTLS_*` constants, including the ML-KEM and ML-DSA key types. |
 
-Every function and constant name in these rule files was checked against the header files of the library it belongs to.
+Every function and constant name in these rule files was checked against the library's header files when the rules were written: OpenSSL and libsodium from their current source, Mbed TLS 3.6, TF-PSA-Crypto, wolfSSL from its November 2026 source, and GnuTLS 3.8.14.
 
 ## How the preprocessor is handled
 
@@ -28,8 +28,8 @@ C code is full of `#if`, `#ifdef` and `#define`. The tool does not run the prepr
 
 - Calls through a function pointer (`table->hash(data)`) and a crypto function passed as an argument without being called are not reported.
 - A macro that renames a crypto function (`#define HASH SHA256`, then `HASH(data)`) is not followed.
-- Cryptography a project implements itself under its own function names is not recognised. For example, OpenSSH's own post-quantum key exchange code is not reported.
-- Not covered yet: the Windows cryptography functions (`BCrypt...`), Apple's (`SecKey...`, `CC_SHA256`) and NSS.
+- Cryptography a project implements itself under its own function names is not recognised. For example, OpenSSH's sntrup761 key exchange is not reported. OpenSSH's ML-KEM-768 calls are reported, because its code uses the same function names as libsodium, so the report names libsodium as the library.
+- Not covered yet: the Windows cryptography functions (`BCrypt...`), Apple's (`SecKey...`, `CC_SHA256`) and NSS (`PK11_...`).
 - C++ files (`.cpp`, `.cc`) are not read yet. In a C++ project, `.h` files are read as C.
 
 ## Tested on
