@@ -2,7 +2,8 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadRules } from './core/rules.ts';
-import { loadLanguages, scan } from './core/scan.ts';
+import { scanInParallel } from './core/parallel.ts';
+import { loadLanguages } from './core/scan.ts';
 import { toReport } from './output/json.ts';
 import { MASCOT_BANNER, printTable } from './output/text.ts';
 
@@ -26,7 +27,7 @@ if (!existsSync(path)) {
 
 if (showBanner) console.log(MASCOT_BANNER);
 await loadLanguages();
-const findings = scan(path, loadRules());
+const findings = await scanInParallel(path, loadRules());
 if (json) console.log(JSON.stringify(toReport(findings), null, 2));
 else printTable(findings);
 

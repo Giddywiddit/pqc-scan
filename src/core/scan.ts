@@ -8,23 +8,45 @@ import { languages } from '../languages/index.ts';
 
 interface ScannedFile { path: string; text: string; name: string; adapter: LanguageAdapter; findings: Finding[] }
 
+/** One file to scan: where it is, the name to report it under, and the language that reads it. */
+export interface PlannedFile { path: string; name: string; adapter: LanguageAdapter }
+
 /** Runs each adapter's one-time setup. Call once before `scan`. */
 export async function loadLanguages(adapters: readonly LanguageAdapter[] = languages): Promise<void> {
   await Promise.all(adapters.map((adapter) => adapter.load?.()));
 }
 
-/** Scan a file or folder with every registered language, giving each adapter only the rules for its own language. */
-export function scan(target: string, rules: ModuleRules[], adapters: readonly LanguageAdapter[] = languages): Finding[] {
+/** Every source file under `target` that one of `adapters` reads, in a fixed order. */
+export function planScan(target: string, adapters: readonly LanguageAdapter[] = languages): { root: string | undefined; files: PlannedFile[] } {
   const root = statSync(target).isDirectory() ? target : undefined;
   const byExtension = new Map(adapters.flatMap((adapter) => adapter.extensions.map((extension) => [extension, adapter] as const)));
-  const files: ScannedFile[] = sourceFiles(target, new Set(byExtension.keys())).map((path) => {
-    const adapter = byExtension.get(extname(path))!;
-    const text = readFileSync(path, 'utf8');
-    const name = root ? relative(root, path) : basename(path);
-    return { path, text, name, adapter, findings: adapter.scanSource(text, name, rules.filter((group) => group.language === adapter.id)) };
-  });
-  if (root) addWrapperFindings(files);
-  return files.flatMap((item) => item.findings);
+  const files = sourceFiles(target, new Set(byExtension.keys()))
+    .map((path) => ({ path, name: root ? relative(root, path) : basename(path), adapter: byExtension.get(extname(path))! }));
+  return { root, files };
+}
+
+/** One rules array per language for the whole scan, so adapters can build their lookup tables once and reuse them. */
+export function rulesByAdapter(rules: ModuleRules[], adapters: readonly LanguageAdapter[] = languages): Map<LanguageAdapter, ModuleRules[]> {
+  return new Map(adapters.map((adapter) => [adapter, rules.filter((group) => group.language === adapter.id)] as const));
+}
+
+/** The findings in one file. */
+export function scanFile(file: PlannedFile, rulesFor: Map<LanguageAdapter, ModuleRules[]>): Finding[] {
+  return file.adapter.scanSource(readFileSync(file.path, 'utf8'), file.name, rulesFor.get(file.adapter)!);
+}
+
+/** Adds the cross-file findings to the per-file findings (in plan order) and returns them all. */
+export function finishScan(root: string | undefined, files: PlannedFile[], findings: Finding[][]): Finding[] {
+  const scanned: ScannedFile[] = files.map((file, index) => ({ ...file, findings: findings[index], text: '' }));
+  if (root) addWrapperFindings(scanned);
+  return scanned.flatMap((item) => item.findings);
+}
+
+/** Scan a file or folder with every registered language, giving each adapter only the rules for its own language. */
+export function scan(target: string, rules: ModuleRules[], adapters: readonly LanguageAdapter[] = languages): Finding[] {
+  const { root, files } = planScan(target, adapters);
+  const rulesFor = rulesByAdapter(rules, adapters);
+  return finishScan(root, files, files.map((file) => scanFile(file, rulesFor)));
 }
 
 // A module whose algorithm comes from a parameter (or that lets a crypto reference escape) is a wrapper: its importers
@@ -34,6 +56,7 @@ function addWrapperFindings(files: ScannedFile[]): void {
   for (const adapter of new Set(files.map((item) => item.adapter))) {
     if (!adapter.localImports || !adapter.resolveImport) continue;
     const own = files.filter((item) => item.adapter === adapter);
+    for (const item of own) item.text = readFileSync(item.path, 'utf8');
     const known = new Set(own.map((item) => item.path));
     const bearing = new Map(own.map((item) => [item.path, item.findings.filter(isDynamic).length] as const).filter(([, count]) => count > 0));
     for (const item of own) {
