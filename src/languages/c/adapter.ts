@@ -1,8 +1,8 @@
 import { Query } from 'web-tree-sitter';
 import type { Node, Parser } from 'web-tree-sitter';
-import { finding } from '../../core/finding.ts';
 import type { LanguageAdapter } from '../../core/language.ts';
 import { lookup, ruleFindings } from '../../core/match.ts';
+import { argumentsOf, unreadableFindings } from '../../core/syntax.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
 
@@ -110,46 +110,12 @@ export function passes(text: string): { source: string; where: string }[] {
   return [{ source: blankDirectives(text), where: '' }, { source: macroBodies(text), where: ' inside a #define macro' }];
 }
 
-/** The arguments of a call_expression node. */
-export const argumentsOf = (call: Node): Node[] => call.childForFieldName('arguments')?.namedChildren ?? [];
-
 /** The findings for one call on `line` matched by `rule`, with its argument nodes; `matched` names what matched. */
 export function callFindings(args: Node[], line: number, rule: Rule, matched: string, file: string, where: string): Finding[] {
   return ruleFindings(rule, file, line, [{ note: `matched ${matched}${where}` }], () => ({
     names: argumentNames(args[rule.algorithmFrom!.arg], rule.values ?? {}),
     qualifiers: [],
   }));
-}
-
-/** How many bytes the parser could not read, given its ERROR nodes in source order (nested ones counted once). */
-export function unreadableBytes(errors: Node[]): number {
-  let bytes = 0;
-  let end = -1;
-  for (const node of errors) {
-    if (node.startIndex >= end) bytes += node.endIndex - node.startIndex;
-    end = Math.max(end, node.endIndex);
-  }
-  return bytes;
-}
-
-/**
- * Fail closed: a known crypto name inside a region the parser could not read is reported as unresolved, not dropped.
- * `patterns` are tried in order on each line, each with how to describe what it found ("a call to", "a use of"); the
- * first group of a match is the name shown.
- */
-export function unreadableFindings(regions: Node[], patterns: [RegExp, string][], file: string, where: string, reportedLines: Set<number>): Finding[] {
-  const findings: Finding[] = [];
-  for (const region of regions) {
-    region.text.split('\n').forEach((content, offset) => {
-      const line = region.startPosition.row + 1 + offset;
-      const found = patterns.map(([pattern, what]) => [pattern.exec(content)?.[1], what] as const).find(([name]) => name);
-      if (found && !reportedLines.has(line)) {
-        reportedLines.add(line);
-        findings.push(finding(file, line, 'parse-error', 'unknown', null, 'unresolved', `Looks like ${found[1]} ${found[0]}${where}, but this part of the file could not be parsed.`));
-      }
-    });
-  }
-  return findings;
 }
 
 /** Scans one parsed pass with the C grammar's query, adding to `findings`. */

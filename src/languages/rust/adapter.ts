@@ -1,22 +1,20 @@
 import { Query } from 'web-tree-sitter';
 import type { Node, Parser } from 'web-tree-sitter';
 import type { LanguageAdapter } from '../../core/language.ts';
-import { ruleFindings } from '../../core/match.ts';
+import { lookup as lookupValue, ruleFindings } from '../../core/match.ts';
+import { type NameIndex, LineReporter, indexRules } from '../../core/matcher.ts';
+import { argumentsOf, escape, hasAncestor, segments, unreadableFindings } from '../../core/syntax.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
-import { argumentsOf, callFindings, unreadableFindings } from '../c/adapter.ts';
 
 let parser: Parser | undefined;
 let query: Query | undefined;
 
-/** Every Rust rule file together. Names are full paths from the crate (`sha2::Sha256`, `ring::digest::SHA256`). */
-interface RustLookup {
-  /** Paths that count only when called, because the algorithm is read from an argument. */
-  functions: Map<string, Rule>;
-  /** Paths whose every use counts. A name also covers every path below it (`p256` covers `p256::SecretKey`). */
-  names: Map<string, Rule>;
-  /** Crates read as another crate (`aws_lc_rs` as `ring`). */
-  mirrors: Map<string, string>;
+/**
+ * Every Rust rule file together. Names are full paths from the crate (`sha2::Sha256`, `ring::digest::SHA256`), and a
+ * name also covers every path below it (`p256` covers `p256::SecretKey`).
+ */
+interface RustLookup extends NameIndex {
   /** A rule crate anywhere in the text. A file without one cannot produce a finding. */
   mentioned: RegExp | null;
   /** A path from a rule crate (`ring::digest::SHA256`), for the parse-error check. */
@@ -24,47 +22,18 @@ interface RustLookup {
 }
 
 const lookups = new WeakMap<ModuleRules[], RustLookup>();
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function lookupFor(rules: ModuleRules[]): RustLookup {
   if (lookups.has(rules)) return lookups.get(rules)!;
-  const functions = new Map<string, Rule>();
-  const names = new Map<string, Rule>();
-  const mirrors = new Map<string, string>();
-  for (const group of rules.filter((item) => item.language === 'rust')) {
-    for (const rule of group.rules) {
-      for (const name of rule.functions) if (!functions.has(name)) functions.set(name, rule);
-      for (const name of rule.names ?? []) if (!names.has(name)) names.set(name, rule);
-    }
-    for (const [from, to] of Object.entries(group.mirrors ?? {})) mirrors.set(from, to);
-  }
-  const crates = [...new Set(rules.filter((group) => group.language === 'rust').flatMap((group) => group.module))].map(escape).join('|');
+  const groups = rules.filter((group) => group.language === 'rust');
+  const crates = [...new Set(groups.flatMap((group) => group.module))].map(escape).join('|');
   const lookup = {
-    functions,
-    names,
-    mirrors,
+    ...indexRules(groups),
     mentioned: crates ? new RegExp(`\\b(${crates})\\b`) : null,
     used: crates ? new RegExp(`\\b((?:${crates})::\\w+(?:::\\w+)*)`) : null,
   };
   lookups.set(rules, lookup);
   return lookup;
-}
-
-/** `::hmac::Hmac::<sha2::Sha256>::new` → [hmac, Hmac, new]: generic arguments are matched on their own. */
-function segments(text: string): string[] {
-  let depth = 0;
-  let plain = '';
-  for (const char of text) {
-    if (char === '<') depth++;
-    else if (char === '>') depth = Math.max(0, depth - 1);
-    else if (depth === 0) plain += char;
-  }
-  return plain.replace(/\s+/g, '').replace(/^::/, '').split('::').filter(Boolean);
-}
-
-function hasAncestor(node: Node, types: readonly string[]): boolean {
-  for (let current = node.parent; current; current = current.parent) if (types.includes(current.type)) return true;
-  return false;
 }
 
 /** What the `use` lines of one block or module bring in: each name with the full path it stands for, and each `use x::*`. */
@@ -132,6 +101,25 @@ const DEFINING = ['name', 'pattern', 'macro'];
  */
 const bareName = (name: string, called: boolean): boolean => called || /^[A-Z]/.test(name);
 
+/** The algorithm name an argument holds: a string as written, or a name the rule's table knows. */
+function argumentNames(node: Node | undefined, values: Record<string, unknown>): string[] | null {
+  if (node?.type === 'string_literal') return /^"[^"\\]*"$/.test(node.text) ? [node.text.slice(1, -1)] : null;
+  return node?.type === 'identifier' && lookupValue(values, node.text) !== undefined ? [node.text] : null;
+}
+
+/** Tokens inside a macro that are not code: their text is never read as a path. */
+const NOT_CODE = new Set(['string_literal', 'raw_string_literal', 'char_literal', 'line_comment', 'block_comment']);
+
+/** The tokens of a macro's token tree, in order. Strings and comments are kept whole, as one token each. */
+function tokensOf(node: Node, out: Node[] = []): Node[] {
+  for (const child of node.children) {
+    if (child.childCount === 0 || NOT_CODE.has(child.type)) out.push(child);
+    else tokensOf(child, out);
+  }
+  return out;
+}
+const isWord = (token: Node | undefined): token is Node => Boolean(token && !NOT_CODE.has(token.type) && /^[A-Za-z_]\w*$/.test(token.text));
+
 function scanRustTree(root: Node, lookup: RustLookup, file: string, findings: Finding[]): void {
   const captures = query!.captures(root);
   const scopes = scopesOf(captures);
@@ -142,8 +130,7 @@ function scanRustTree(root: Node, lookup: RustLookup, file: string, findings: Fi
     for (let current = node.parent; current; current = current.parent) if (scopes.has(current.id)) found.push(scopes.get(current.id)!);
     return found;
   };
-  const seen = new Set<string>();
-  const reportedLines = new Set<number>();
+  const reporter = new LineReporter(file, findings);
   const errorRegions: Node[] = [];
 
   /** The full paths `path` may stand for: through a `use`, from the crate root, or below a `use x::*`. */
@@ -170,12 +157,13 @@ function scanRustTree(root: Node, lookup: RustLookup, file: string, findings: Fi
     return undefined;
   };
 
-  /** Reports one match. A name used twice on one line (`let k: SigningKey = SigningKey::random(..)`) is one use. */
-  const report = (rule: Rule, name: string, line: number, resolve?: () => Finding[]): void => {
-    if (!resolve && seen.has(`${line} ${rule.id}`)) return;
-    seen.add(`${line} ${rule.id}`);
-    reportedLines.add(line);
-    findings.push(...(resolve ? resolve() : ruleFindings(rule, file, line, [{ note: `matched ${name}` }], () => ({ names: null, qualifiers: [] }))));
+  /** Reports one match: a use of a name, or a call with the argument it may read the algorithm from (`how` says where). */
+  const report = (match: { rule: Rule; name: string; call: boolean }, line: number, argument: () => Node | string | undefined, how = ''): void => {
+    if (!match.call) return reporter.name(match.rule, line, `matched ${match.name}`);
+    reporter.call(match.rule, line, ruleFindings(match.rule, file, line, [{ note: `matched ${match.name}${how}` }], () => {
+      const value = argument();
+      return { names: typeof value === 'string' ? [value] : argumentNames(value, match.rule.values ?? {}), qualifiers: [] };
+    }));
   };
 
   /** The call `node` is the function of, if any (`f(x)`, `f::<T>(x)`). */
@@ -189,8 +177,7 @@ function scanRustTree(root: Node, lookup: RustLookup, file: string, findings: Fi
     const call = callOf(node);
     const match = ruleFor(path, Boolean(call), visible);
     if (!match) return;
-    const line = node.startPosition.row + 1;
-    report(match.rule, match.name, line, match.call ? () => callFindings(argumentsOf(call!), line, match.rule, match.name, file, '') : undefined);
+    report(match, node.startPosition.row + 1, () => argumentsOf(call!)[match.rule.algorithmFrom!.arg]);
   };
 
   const macros: Node[] = [];
@@ -214,32 +201,35 @@ function scanRustTree(root: Node, lookup: RustLookup, file: string, findings: Fi
     }
   }
 
-  // A macro's arguments (`assert_eq!(Sha256::digest(b"abc"), ...)`) and the code a `macro_rules!` expands to are
-  // tokens, not parsed code, so paths are found by their text. String contents and comments are blanked first, keeping
-  // every position the same.
-  for (const tokens of macros) {
-    const source = tokens.text;
-    const visible = scopesAt(tokens);
-    const blank = (match: string) => match.replace(/[^\n]/g, ' ');
-    const plain = source.replace(/r(#*)"[\s\S]*?"\1|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\\n]|\\[^\n]+?)'|\/\/[^\n]*|\/\*[\s\S]*?\*\//g, blank);
-    for (const found of plain.matchAll(/(?<![\w.:$])(?:::)?[A-Za-z_]\w*(?:\s*::\s*[A-Za-z_]\w*)*/g)) {
-      const path = segments(found[0]);
-      const end = found.index + found[0].length;
-      const called = /^\s*\(/.test(plain.slice(end));
+  // A macro's arguments (`assert_eq!(Sha256::digest(b"abc"), ...)`) and the code a `macro_rules!` expands to are not
+  // parsed as code, but the parser still splits them into tokens. Paths are read from those tokens: words joined by
+  // `::`. Strings and comments are single tokens, so their text is never mistaken for code.
+  for (const tree of macros) {
+    const tokens = tokensOf(tree);
+    const visible = scopesAt(tree);
+    for (let start = 0; start < tokens.length; start++) {
+      if (!isWord(tokens[start])) continue;
+      const before = tokens[start - 1]?.text;
+      // A later part of a path (`b` in `a::b`), a method or field (`.update`), or a macro variable (`$name`).
+      if (before === '.' || before === '$' || (before === '::' && (isWord(tokens[start - 2]) || tokens[start - 2]?.text === '::'))) continue;
+      const path = [tokens[start].text];
+      let end = start;
+      while (tokens[end + 1]?.text === '::' && isWord(tokens[end + 2])) {
+        path.push(tokens[end + 2].text);
+        end += 2;
+      }
+      const called = tokens[end + 1]?.text === '(';
       if (path.length === 1 && !(bareName(path[0], called) && visible.some((scope) => scope.names.has(path[0]) || scope.globs.length > 0))) continue;
       const match = ruleFor(path, called, visible);
       if (!match) continue;
-      const line = tokens.startPosition.row + 1 + (source.slice(0, found.index).match(/\n/g)?.length ?? 0);
       // Only a string written directly as the first argument can be read here.
-      const literal = /^\s*\(\s*"([^"\\]*)"/.exec(source.slice(end))?.[1];
-      report(match.rule, match.name, line, match.call
-        ? () => ruleFindings(match.rule, file, line, [{ note: `matched ${match.name} inside a macro` }],
-          () => ({ names: literal !== undefined && match.rule.algorithmFrom!.arg === 0 ? [literal] : null, qualifiers: [] }))
-        : undefined);
+      const first = tokens[end + 2];
+      const literal = first?.type === 'string_literal' && /^"[^"\\]*"$/.test(first.text) ? first.text.slice(1, -1) : undefined;
+      report(match, tokens[start].startPosition.row + 1, () => (match.rule.algorithmFrom!.arg === 0 ? literal : undefined), ' inside a macro');
     }
   }
 
-  if (lookup.used) findings.push(...unreadableFindings(errorRegions, [[lookup.used, 'a use of']], file, '', reportedLines));
+  if (lookup.used) findings.push(...unreadableFindings(errorRegions, [[lookup.used, 'a use of']], file, '', reporter.reportedLines));
 }
 
 function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[] {

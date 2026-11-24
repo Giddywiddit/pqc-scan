@@ -44,3 +44,12 @@ fn sign_with(pss: bool, data: &[u8]) {
         sha1::Sha1::digest(data) // expect: SHA-1 needs-review
     );
 }
+
+// Inside a macro, comments and strings are single tokens, so their text is never read as code.
+fn macro_tokens(data: &[u8]) {
+    assert!(data.len() > 0 /* sha1::Sha1 is not used here */, "nor md5::compute");
+    assert_eq!(
+        sha2::Sha384::digest(data).len(), // expect: SHA-384 observed-resistant
+        48 // and not ripemd::Ripemd160
+    );
+}

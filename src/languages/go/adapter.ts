@@ -2,24 +2,22 @@ import { Query } from 'web-tree-sitter';
 import type { Node, Parser } from 'web-tree-sitter';
 import type { LanguageAdapter } from '../../core/language.ts';
 import { lookup as lookupValue, ruleFindings } from '../../core/match.ts';
+import { type NameIndex, LineReporter, indexRules } from '../../core/matcher.ts';
+import { escape, unreadableFindings } from '../../core/syntax.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
-import { type CLookup, cLookupFor, unreadableFindings } from '../c/adapter.ts';
+import { type CLookup, cLookupFor } from '../c/api.ts';
 
 let parser: Parser | undefined;
 let query: Query | undefined;
 
 /**
  * Every Go rule file together. Names are an import path, or an import path and a member (`crypto/sha256.New`), as Go's
- * own documentation writes them. A whole import path covers every member of that package.
+ * own documentation writes them. A whole import path covers every member of that package. `functions` count where
+ * they are called or built (`tls.Config{...}`), and mirrors read one import path as another
+ * (`github.com/golang-jwt/jwt/v4` as `.../v5`).
  */
-interface GoLookup {
-  /** Members that count when called or built (`tls.Config{...}`), because the algorithm is read from an argument. */
-  functions: Map<string, Rule>;
-  /** Packages and members whose every use counts. */
-  names: Map<string, Rule>;
-  /** Import paths read as another import path (`github.com/golang-jwt/jwt/v5` as `github.com/golang-jwt/jwt`). */
-  mirrors: Map<string, string>;
+interface GoLookup extends NameIndex {
   /** Import paths that rules name, for the quick check on each file. */
   paths: Set<string>;
   /** C functions, called from Go through cgo as `C.name(...)`. */
@@ -29,25 +27,14 @@ interface GoLookup {
 }
 
 const lookups = new WeakMap<ModuleRules[], GoLookup>();
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function lookupFor(rules: ModuleRules[]): GoLookup {
   if (lookups.has(rules)) return lookups.get(rules)!;
-  const functions = new Map<string, Rule>();
-  const names = new Map<string, Rule>();
-  const mirrors = new Map<string, string>();
   const groups = rules.filter((group) => group.language === 'go');
-  for (const group of groups) {
-    for (const rule of group.rules) {
-      for (const name of rule.functions) if (!functions.has(name)) functions.set(name, rule);
-      for (const name of rule.names ?? []) if (!names.has(name)) names.set(name, rule);
-    }
-    for (const [from, to] of Object.entries(group.mirrors ?? {})) mirrors.set(from, to);
-  }
   const paths = new Set(groups.flatMap((group) => group.module));
   const c = cLookupFor(rules.filter((group) => group.language === 'c'));
   const words = [...[...paths].map((path) => `"${escape(path)}"`), ...(c ? ['"C"'] : [])];
-  const lookup = { functions, names, mirrors, paths, c, mentioned: words.length > 0 ? new RegExp(words.join('|')) : null };
+  const lookup = { ...indexRules(groups), paths, c, mentioned: words.length > 0 ? new RegExp(words.join('|')) : null };
   lookups.set(rules, lookup);
   return lookup;
 }
@@ -131,8 +118,7 @@ function scanGoTree(root: Node, lookup: GoLookup, file: string, findings: Findin
   const captures = query!.captures(root);
   const imports = importsOf(captures);
   const locals = localsOf(captures);
-  const seen = new Set<string>();
-  const reportedLines = new Set<number>();
+  const reporter = new LineReporter(file, findings);
   const errorRegions: Node[] = [];
 
   /** Whether a local variable, parameter or constant hides the package name `name` at `node`. */
@@ -165,14 +151,12 @@ function scanGoTree(root: Node, lookup: GoLookup, file: string, findings: Findin
     return undefined;
   };
 
+  /** Reports `rule` at `node`. `args` is given for a call: the argument nodes the algorithm may be read from. */
   const report = (rule: Rule, name: string, node: Node, args?: Node[]): void => {
     const line = node.startPosition.row + 1;
-    // A name used twice on one line (`var k *rsa.PrivateKey = rsa.GenerateKey(...)`) is one use.
-    if (!args && seen.has(`${line} ${rule.id}`)) return;
-    seen.add(`${line} ${rule.id}`);
-    reportedLines.add(line);
-    findings.push(...ruleFindings(rule, file, line, [{ note: `matched ${name}` }], () => ({
-      names: argumentNames(args?.[rule.algorithmFrom!.arg], rule.values ?? {}),
+    if (!args) return reporter.name(rule, line, `matched ${name}`);
+    reporter.call(rule, line, ruleFindings(rule, file, line, [{ note: `matched ${name}` }], () => ({
+      names: argumentNames(args[rule.algorithmFrom!.arg], rule.values ?? {}),
       qualifiers: [],
     })));
   };
@@ -221,7 +205,7 @@ function scanGoTree(root: Node, lookup: GoLookup, file: string, findings: Findin
   // Code the parser could not read is checked for a rule package used through its name in this file (`rsa.`).
   const used = [...imports.byName].filter(([, path]) => lookup.paths.has(path) || lookup.mirrors.has(path)).map(([local]) => escape(local));
   if (imports.cgo && lookup.c) used.push('C');
-  if (used.length > 0) findings.push(...unreadableFindings(errorRegions, [[new RegExp(`\\b((?:${used.join('|')})\\.\\w+)`), 'a use of']], file, '', reportedLines));
+  if (used.length > 0) findings.push(...unreadableFindings(errorRegions, [[new RegExp(`\\b((?:${used.join('|')})\\.\\w+)`), 'a use of']], file, '', reporter.reportedLines));
 }
 
 function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[] {

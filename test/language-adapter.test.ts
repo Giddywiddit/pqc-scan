@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -78,5 +78,16 @@ describe('adding a language needs only an adapter and a rules folder', () => {
 
   it('has a registered adapter for every rules/<language>/ folder, and rules for every adapter', () => {
     expect(new Set(loadRules().map((group) => group.language))).toEqual(new Set(languages.map((adapter) => adapter.id)));
+  });
+});
+
+describe('boundaries between languages', () => {
+  it('lets other languages use the C support only through src/languages/c/api.ts', () => {
+    const root = join(dirname(new URL(import.meta.url).pathname), '../src/languages');
+    const offenders = languages.filter((adapter) => adapter.id !== 'c').flatMap((adapter) => {
+      const source = readFileSync(join(root, adapter.id, 'adapter.ts'), 'utf8');
+      return /from '\.\.\/c\/(?!api\.ts')/.test(source) ? [adapter.id] : [];
+    });
+    expect(offenders).toEqual([]);
   });
 });

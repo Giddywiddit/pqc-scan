@@ -1,10 +1,11 @@
 import { Query } from 'web-tree-sitter';
 import type { Node, Parser } from 'web-tree-sitter';
 import type { LanguageAdapter } from '../../core/language.ts';
-import { ruleFindings } from '../../core/match.ts';
+import { LineReporter } from '../../core/matcher.ts';
+import { argumentsOf, escape, hasAncestor, segments, unreadableBytes, unreadableFindings } from '../../core/syntax.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
-import { type CLookup, argumentsOf, callFindings, cLookupFor, grammar as cGrammar, loadC, passes, scanCTree, unreadableBytes, unreadableFindings } from '../c/adapter.ts';
+import { type CLookup, callFindings, cLookupFor, grammar as cGrammar, loadC, passes, scanCTree } from '../c/api.ts';
 
 let parser: Parser | undefined;
 let query: Query | undefined;
@@ -26,7 +27,6 @@ interface CppLookup {
 }
 
 const lookups = new WeakMap<ModuleRules[], CppLookup>();
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function lookupFor(rules: ModuleRules[]): CppLookup {
   if (lookups.has(rules)) return lookups.get(rules)!;
@@ -48,18 +48,6 @@ function lookupFor(rules: ModuleRules[]): CppLookup {
   return lookup;
 }
 
-/** `::CryptoPP::GCM<CryptoPP::AES>::Encryption` → [CryptoPP, GCM, Encryption]: template arguments are matched on their own. */
-function segments(text: string): string[] {
-  let depth = 0;
-  let plain = '';
-  for (const char of text) {
-    if (char === '<') depth++;
-    else if (char === '>') depth = Math.max(0, depth - 1);
-    else if (depth === 0) plain += char;
-  }
-  return plain.replace(/\s+/g, '').replace(/^::/, '').split('::').filter(Boolean);
-}
-
 /**
  * Blanks an export macro between `class` or `struct` and the class name (`class BOTAN_PUBLIC_API(3, 6) RSA_PublicKey`,
  * `class CRYPTOPP_DLL SHA256`), which the grammar cannot tell apart from the name. Spaces of the same length keep every
@@ -68,11 +56,6 @@ function segments(text: string): string[] {
 export function blankExportMacros(source: string): string {
   return source.replace(/\b(class|struct)(\s+)([A-Z][A-Z0-9_]*[A-Z0-9])(\s*\([^()\n]*\))?(?=\s+[A-Za-z_])/g,
     (_match, keyword: string, space: string, name: string, args = '') => keyword + space + ' '.repeat(name.length + args.length));
-}
-
-function hasAncestor(node: Node, type: string): boolean {
-  for (let current = node.parent; current; current = current.parent) if (current.type === type) return true;
-  return false;
 }
 
 /** The namespaces a file brings into scope with `using namespace`, `using X::Y` and `namespace a = X`. */
@@ -104,19 +87,14 @@ function scanCppTree(root: Node, lookup: CppLookup, file: string, where: string,
   const captures = query!.captures(root);
   const scope = scopeOf(captures);
   const expand = (path: string[]) => (scope.aliases.has(path[0]) ? [...scope.aliases.get(path[0])!, ...path.slice(1)] : path);
-  const seen = new Set<string>();
+  const reporter = new LineReporter(file, findings, reportedLines);
   const errorRegions: Node[] = [];
 
   /** Reports `rule` at `node`. `args` is given for a call: the argument nodes the algorithm may be read from. */
   const report = (rule: Rule, node: Node, note: string, args?: Node[]): void => {
     const line = node.startPosition.row + 1;
-    // A type named twice on one line (`std::unique_ptr<SHA256> p(new SHA256)`) is one use.
-    if (!args && seen.has(`${line} ${rule.id}`)) return;
-    seen.add(`${line} ${rule.id}`);
-    reportedLines.add(line);
-    findings.push(...(args
-      ? callFindings(args, line, rule, note, file, where)
-      : ruleFindings(rule, file, line, [{ note: `matched ${note}${where}` }], () => ({ names: null, qualifiers: [] }))));
+    if (args) reporter.call(rule, line, callFindings(args, line, rule, note, file, where));
+    else reporter.name(rule, line, `matched ${note}${where}`);
   };
 
   /** A C library function called as `name(...)`, `::name(...)` or inside a rule namespace (`Botan::Sodium::name`). */
