@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const bundled = (grammar: string) => fileURLToPath(new URL(`../../grammars/tree-sitter-${grammar}.wasm`, import.meta.url));
 let initialised: Promise<void> | undefined;
 
-/** Loads one tree-sitter grammar (`c`, `cpp`, `go`, ...) and returns a parser for it. */
+/** Loads one tree-sitter grammar (`c`, `cpp`, `go`, `python`, ...) and returns a parser for it. */
 export async function createParser(grammar: string): Promise<Parser> {
   initialised ??= Parser.init();
   await initialised;

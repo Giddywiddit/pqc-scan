@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const out = fileURLToPath(new URL('../grammars/', import.meta.url));
 mkdirSync(out, { recursive: true });
-for (const grammar of ['c', 'cpp', 'rust', 'go']) {
+for (const grammar of ['c', 'cpp', 'rust', 'go', 'python']) {
   const folder = dirname(require.resolve(`tree-sitter-${grammar}/package.json`));
   copyFileSync(join(folder, `tree-sitter-${grammar}.wasm`), join(out, `tree-sitter-${grammar}.wasm`));
   copyFileSync(join(folder, 'LICENSE'), join(out, `LICENSE-tree-sitter-${grammar}`));

@@ -1,0 +1,39 @@
+module: [cryptography]
+rules:
+  - id: python-cryptography-rsa
+    functions: [cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could derive the private key from the public key using Shor's algorithm."
+  - id: python-cryptography-ec
+    functions: [cryptography.hazmat.primitives.asymmetric.ec.generate_private_key]
+    category: keygen
+    algorithm: EC
+    status: vulnerable
+  - id: python-cryptography-dh
+    functions: [cryptography.hazmat.primitives.asymmetric.dh.generate_parameters, cryptography.hazmat.primitives.asymmetric.dh.generate_private_key]
+    category: key-exchange
+    algorithm: DH
+    status: vulnerable
+  - id: python-cryptography-ed25519
+    functions: [cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PrivateKey.generate, cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PublicKey.from_public_bytes]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+  - id: python-cryptography-x25519
+    functions: [cryptography.hazmat.primitives.asymmetric.x25519.X25519PrivateKey.generate, cryptography.hazmat.primitives.asymmetric.x25519.X25519PublicKey.from_public_bytes]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+  - id: python-cryptography-sha256
+    functions: [cryptography.hazmat.primitives.hashes.SHA256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: python-cryptography-sha1
+    functions: [cryptography.hazmat.primitives.hashes.SHA1]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "Classically weak. Migrate regardless of quantum risk."

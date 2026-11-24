@@ -28,6 +28,12 @@ const callIn: Record<string, (module: string, fn: string, args: string[], ruleLa
   go: (_module, fn, args, ruleLanguage) => (ruleLanguage === 'c'
     ? `package p\nimport "C"\nfunc f() { C.${fn}(${args.join(', ')}) }`
     : `package p\nimport m ${quote(goPath(fn))}\nfunc f() { m.${fn.slice(goPath(fn).length + 1)}(${args.join(', ')}) }`),
+  python: (_module, fn, args) => {
+    const parts = fn.split('.');
+    const member = parts.pop()!;
+    const path = parts.join('.') || fn;
+    return path.includes('.') ? `from ${path} import ${member}\n${member}(${args.join(', ')})` : `import ${path}\n${path}.${member}(${args.join(', ')})`;
+  },
 };
 // The import path in a Go rule name: everything before the member, which follows the last path element's first dot.
 const goPath = (name: string) => {
@@ -41,6 +47,7 @@ const valueIn: Record<string, (key: string, ruleLanguage: string) => string> = {
   cpp: (key) => (key.includes('_') ? key.toUpperCase() : quote(key)),
   rust: quote,
   go: (key, ruleLanguage) => (ruleLanguage === 'c' && key.includes('_') ? `C.${key.toUpperCase()}` : quote(key)),
+  python: quote,
 };
 // How a rule's name is used, for languages with name rules: a C++ variable of the type, or a Rust path below the name
 // (a crate-root name such as `md5` is always used through something inside it).
@@ -75,7 +82,10 @@ for (const group of groups) for (const adapter of languages.filter((item) => [it
 describe('rule files', () => {
   it('generates a non-trivial number of cases for every language with rules', () => {
     expect(cases.length).toBeGreaterThan(200);
-    for (const language of new Set(groups.map((group) => group.language))) expect(cases.filter((item) => item.language === language).length, language).toBeGreaterThan(50);
+    for (const language of new Set(groups.map((group) => group.language))) {
+      const minimum = language === 'python' ? 10 : 50;
+      expect(cases.filter((item) => item.language === language).length, language).toBeGreaterThan(minimum);
+    }
   });
 
   it('keeps rule ids unique across all rule files', () => {

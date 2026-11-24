@@ -12,7 +12,7 @@ const rulesFor = rulesByAdapter(loadRules());
 const adapterFor = (file: string) => languages.find((adapter) => adapter.extensions.includes(extname(file)))!;
 beforeAll(() => loadLanguages());
 // `/* expect: ... */` is for lines that cannot end in a // comment, such as a macro line ending in a backslash.
-const marker = /(?:\/\/ expect: (.+)$|\/\* expect: (.+?) \*\/)/;
+const marker = /(?:\/\/ expect: (.+)$|# expect: (.+)$|\/\* expect: (.+?) \*\/)/;
 
 // Every fixture folder with at least one marked file is a corpus, so a new language's folder is picked up on its own.
 const root = fileURLToPath(new URL('./fixtures/', import.meta.url));
@@ -30,7 +30,7 @@ for (const directory of corpora) {
         const expected = new Map<number, string[]>();
         text.split('\n').forEach((line, index) => {
           const match = marker.exec(line);
-          if (match) expected.set(index + 1, (match[1] ?? match[2]).split(',').map((item) => item.trim()));
+          if (match) expected.set(index + 1, (match[1] ?? match[2] ?? match[3]).split(',').map((item) => item.trim()));
         });
         const actual = new Map<number, string[]>();
         const adapter = adapterFor(name);

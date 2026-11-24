@@ -3,9 +3,9 @@
 ```
  /\_/\
 ( 0.1 )    [ pqc-scan • Post-Quantum Cryptography Scanner ]
- > ^ <     Finds the cryptography in your JavaScript, TypeScript, C, C++, Rust and Go
+ > ^ <     Scans your JavaScript, TypeScript, C, C++, Rust, Go and Python
            ---------------------------------------------------------
-           Looks for what quantum computers will break (NIST FIPS 203/204/205)
+           Flags the cryptography a quantum computer could break
 ```
 
 **pqc-scan reads your source code, lists the places it uses cryptography, and tells you which of those uses a future quantum computer could break.**
@@ -32,7 +32,7 @@ NIST has published replacements believed to resist quantum computers: ML-KEM (FI
 
 ## Try it
 
-You need [Node.js](https://nodejs.org) 22 or newer. `npm install` downloads about 150 MB: the C, C++, Rust and Go parsers (72 MB), TypeScript (23 MB, used to read JavaScript and TypeScript), and the tools that run the tests.
+You need [Node.js](https://nodejs.org) 22 or newer. `npm install` downloads the language parsers, TypeScript, and the tools that run the tests.
 
 ```sh
 git clone https://github.com/Giddywiddit/pqc-scan.git
@@ -86,8 +86,9 @@ Exit status: 0 when every finding is resistant or nothing was found, 1 when any 
 | C++ | Crypto++, Botan, and every C library above | [rules/cpp](rules/cpp/README.md) |
 | Rust | RustCrypto, ring, aws-lc-rs, the openssl crate, rustls, jsonwebtoken | [rules/rust](rules/rust/README.md) |
 | Go | The standard library (including TLS), golang.org/x/crypto (including SSH), CIRCL, golang-jwt, and every C library above through cgo | [rules/go](rules/go/README.md) |
+| Python | `cryptography`, PyJWT | [rules/python](rules/python/README.md) |
 
-Python and Java are planned. Each language page lists what is matched, its limits, and the real projects it was tested on.
+Java is planned. Each language page lists what is matched, its limits, and the real projects it was tested on.
 
 ## What it cannot see
 

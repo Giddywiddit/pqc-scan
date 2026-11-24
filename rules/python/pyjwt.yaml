@@ -1,0 +1,13 @@
+module: [jwt]
+rules:
+  - id: python-pyjwt-encode
+    functions: [jwt.encode]
+    category: signature
+    algorithmFrom: { arg: 2 }
+    values:
+      RS256: { algorithm: RSA, status: vulnerable }
+      RS384: { algorithm: RSA, status: vulnerable }
+      RS512: { algorithm: RSA, status: vulnerable }
+      ES256: { algorithm: ECDSA, status: vulnerable }
+      ES384: { algorithm: ECDSA, status: vulnerable }
+      HS256: { algorithm: HMAC-SHA256, status: observed-resistant }

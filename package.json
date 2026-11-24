@@ -43,6 +43,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
+    "tree-sitter-python": "0.25.0",
     "typescript": "5.9.3",
     "web-tree-sitter": "0.27.2",
     "yaml": "2.9.1"
