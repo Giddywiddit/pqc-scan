@@ -1,0 +1,12 @@
+module: [nacl.public, nacl.signing]
+rules:
+  - id: python-pynacl-x25519
+    functions: [nacl.public.PrivateKey.generate, nacl.public.PrivateKey.from_private_bytes]
+    category: key-exchange
+    algorithm: X25519
+    status: vulnerable
+  - id: python-pynacl-ed25519
+    functions: [nacl.signing.SigningKey.generate, nacl.signing.SigningKey.from_seed]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable

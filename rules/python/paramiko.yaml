@@ -1,0 +1,23 @@
+module: [paramiko]
+rules:
+  - id: python-paramiko-rsa
+    functions: [paramiko.RSAKey.generate, paramiko.RSAKey.from_private_key, paramiko.RSAKey.from_private_key_file]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "RSA host and user keys are vulnerable to Shor's algorithm."
+  - id: python-paramiko-ecdsa
+    functions: [paramiko.ECDSAKey.generate, paramiko.ECDSAKey.from_private_key, paramiko.ECDSAKey.from_private_key_file]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+  - id: python-paramiko-ed25519
+    functions: [paramiko.Ed25519Key.from_private_key, paramiko.Ed25519Key.from_private_key_file]
+    category: signature
+    algorithm: Ed25519
+    status: vulnerable
+  - id: python-paramiko-dss
+    functions: [paramiko.DSSKey.from_private_key, paramiko.DSSKey.from_private_key_file]
+    category: signature
+    algorithm: DSA
+    status: vulnerable

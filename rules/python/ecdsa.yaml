@@ -1,0 +1,14 @@
+module: [ecdsa]
+rules:
+  - id: python-ecdsa-signing-key
+    functions: [ecdsa.SigningKey.generate, ecdsa.SigningKey.from_string, ecdsa.SigningKey.from_pem]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "Classical elliptic-curve signatures are vulnerable to Shor's algorithm."
+  - id: python-ecdsa-verifying-key
+    functions: [ecdsa.VerifyingKey.from_string, ecdsa.VerifyingKey.from_pem]
+    category: signature
+    algorithm: ECDSA
+    status: vulnerable
+    note: "Classical elliptic-curve signatures are vulnerable to Shor's algorithm."

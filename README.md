@@ -86,7 +86,7 @@ Exit status: 0 when every finding is resistant or nothing was found, 1 when any 
 | C++ | Crypto++, Botan, and every C library above | [rules/cpp](rules/cpp/README.md) |
 | Rust | RustCrypto, ring, aws-lc-rs, the openssl crate, rustls, jsonwebtoken | [rules/rust](rules/rust/README.md) |
 | Go | The standard library (including TLS), golang.org/x/crypto (including SSH), CIRCL, golang-jwt, and every C library above through cgo | [rules/go](rules/go/README.md) |
-| Python | `cryptography`, PyJWT | [rules/python](rules/python/README.md) |
+| Python | `cryptography`, PyJWT, PyCryptodome, `ecdsa`, `hashlib`, Paramiko, PyNaCl | [rules/python](rules/python/README.md) |
 
 Java is planned. Each language page lists what is matched, its limits, and the real projects it was tested on.
 

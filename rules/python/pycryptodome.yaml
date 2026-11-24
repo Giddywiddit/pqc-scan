@@ -1,0 +1,20 @@
+module: [Crypto.PublicKey, Crypto.Cipher]
+rules:
+  - id: python-pycryptodome-rsa
+    functions: [Crypto.PublicKey.RSA.generate, Crypto.PublicKey.RSA.import_key]
+    category: keygen
+    algorithm: RSA
+    status: vulnerable
+    note: "A quantum computer could derive or forge RSA keys using Shor's algorithm."
+  - id: python-pycryptodome-ecc
+    functions: [Crypto.PublicKey.ECC.generate, Crypto.PublicKey.ECC.import_key]
+    category: keygen
+    algorithm: ECC
+    status: vulnerable
+    note: "Classical elliptic-curve cryptography is vulnerable to Shor's algorithm."
+  - id: python-pycryptodome-aes
+    functions: [Crypto.Cipher.AES.new]
+    category: symmetric
+    algorithm: AES
+    status: needs-review
+    note: "Review the key length and mode. AES-128 has a reduced quantum security margin, and unauthenticated modes may be unsafe."

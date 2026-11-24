@@ -1,0 +1,45 @@
+module: [hashlib]
+rules:
+  - id: python-hashlib-md5
+    functions: [hashlib.md5]
+    category: hash
+    algorithm: MD5
+    status: needs-review
+    note: "MD5 is broken against ordinary computers. Replace it."
+  - id: python-hashlib-sha1
+    functions: [hashlib.sha1]
+    category: hash
+    algorithm: SHA-1
+    status: needs-review
+    note: "SHA-1 is classically weak. Migrate regardless of quantum risk."
+  - id: python-hashlib-sha224
+    functions: [hashlib.sha224]
+    category: hash
+    algorithm: SHA-224
+    status: needs-review
+    note: "SHA-224 has 112-bit collision strength. Review it against policy."
+  - id: python-hashlib-sha256
+    functions: [hashlib.sha256]
+    category: hash
+    algorithm: SHA-256
+    status: observed-resistant
+  - id: python-hashlib-sha384
+    functions: [hashlib.sha384]
+    category: hash
+    algorithm: SHA-384
+    status: observed-resistant
+  - id: python-hashlib-sha512
+    functions: [hashlib.sha512]
+    category: hash
+    algorithm: SHA-512
+    status: observed-resistant
+  - id: python-hashlib-sha3-256
+    functions: [hashlib.sha3_256]
+    category: hash
+    algorithm: SHA3-256
+    status: observed-resistant
+  - id: python-hashlib-sha3-512
+    functions: [hashlib.sha3_512]
+    category: hash
+    algorithm: SHA3-512
+    status: observed-resistant
