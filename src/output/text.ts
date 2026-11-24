@@ -10,7 +10,12 @@ export const MASCOT_BANNER = [
   '           Looks for what quantum computers will break (NIST FIPS 203/204/205)\n',
 ].join('\n');
 
-export function printTable(findings: Finding[]): void {
+export function printTable(findings: Finding[], known = 0): void {
+  if (known > 0) console.log(`${known} finding(s) already in the baseline are not shown.\n`);
+  if (findings.length === 0 && known > 0) {
+    console.log('✅ No new findings since the baseline.\n');
+    return;
+  }
   if (findings.length === 0) {
     console.log('⚠️  No recognized cryptography found. This is not a security conclusion.\n');
     return;

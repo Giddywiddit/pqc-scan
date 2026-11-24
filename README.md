@@ -59,6 +59,9 @@ Cryptography found:
 |---|---|
 | `--json` | Prints the results as JSON for other programs. The format is described by [`schema/report-v1.schema.json`](schema/report-v1.schema.json); its `schemaVersion` changes only when a change could break a program that reads it. |
 | `--quiet` | Hides the cat banner. |
+| `--sarif <file>` | Also writes the ❌, 🔍 and ⚠️ findings to `<file>` in SARIF 2.1.0, the format GitHub code scanning reads, so they appear as alerts on pull requests. ✅ findings are left out, since they need no action. |
+| `--write-baseline <file>` | Also writes every finding to `<file>`, to accept the current findings for now. |
+| `--baseline <file>` | Leaves out the findings listed in `<file>`, so the exit status is 1 only for new ones. A finding is recognised by its rule, file and the text of its line, so it still matches after code above it moves. |
 | `--cache <file>` | Saves each file's results in `<file>` and reuses them on the next run while the file is unchanged. The saved results are discarded whenever the scanner or its rules change. Anyone who can change the cache file can change the results, so keep it outside the folder you scan (the tool refuses a cache inside it), or set the environment variable `PQC_SCAN_CACHE_KEY` to a secret: the cache is then signed, and a cache that was changed or signed with another key is not used. |
 | `--max-file-size <MB>` | Files larger than this (default 20 MB) are not read, and are reported as ⚠️ not scanned. |
 

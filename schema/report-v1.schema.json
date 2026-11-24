@@ -26,7 +26,14 @@
         "unresolved": { "type": "integer", "minimum": 0 }
       }
     },
-    "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } }
+    "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } },
+    "baseline": {
+      "description": "Present with --baseline: how many findings were left out of `findings` and `summary` because the baseline file already lists them.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["known"],
+      "properties": { "known": { "type": "integer", "minimum": 0 } }
+    }
   },
   "definitions": {
     "finding": {

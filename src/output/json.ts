@@ -10,11 +10,13 @@ export interface Report {
   tool: { name: 'pqc-scan'; version: string };
   summary: { total: number } & Record<Status, number>;
   findings: Finding[];
+  /** With --baseline: how many findings were left out because the baseline already lists them. */
+  baseline?: { known: number };
 }
 
 const version = (JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string }).version;
 
-export function toReport(findings: Finding[]): Report {
+export function toReport(findings: Finding[], known?: number): Report {
   const counts = Object.fromEntries(STATUSES.map((status) => [status, findings.filter((item) => item.status === status).length])) as Record<Status, number>;
-  return { schemaVersion: SCHEMA_VERSION, tool: { name: 'pqc-scan', version }, summary: { total: findings.length, ...counts }, findings };
+  return { schemaVersion: SCHEMA_VERSION, tool: { name: 'pqc-scan', version }, summary: { total: findings.length, ...counts }, findings, ...(known === undefined ? {} : { baseline: { known } }) };
 }
