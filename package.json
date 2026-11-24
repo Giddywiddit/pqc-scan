@@ -1,30 +1,61 @@
 {
   "name": "pqc-scan",
   "version": "0.1.0",
-  "private": true,
-  "type": "module",
   "description": "Conservative post-quantum cryptography inventory for JavaScript, TypeScript, C, C++, Rust and Go",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Giddywiddit/pqc-scan.git"
+  },
+  "homepage": "https://github.com/Giddywiddit/pqc-scan#readme",
+  "bugs": {
+    "url": "https://github.com/Giddywiddit/pqc-scan/issues"
+  },
+  "keywords": [
+    "post-quantum",
+    "cryptography",
+    "pqc",
+    "cbom",
+    "cyclonedx",
+    "sarif",
+    "security",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "pqc-scan": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "rules",
+    "schema",
+    "grammars"
+  ],
   "scripts": {
     "scan": "tsx src/cli.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json && node scripts/copy-grammars.mjs",
+    "prepack": "npm run build"
   },
   "dependencies": {
-    "tree-sitter-c": "0.24.1",
-    "tree-sitter-cpp": "0.23.4",
-    "tree-sitter-go": "0.25.0",
-    "tree-sitter-rust": "0.24.0",
+    "typescript": "^5.8.0",
     "web-tree-sitter": "0.27.2",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "ajv": "^8.20.0",
+    "tree-sitter-c": "0.24.1",
+    "tree-sitter-cpp": "0.23.4",
+    "tree-sitter-go": "0.25.0",
+    "tree-sitter-rust": "0.24.0",
     "tsx": "^4.20.0",
-    "typescript": "^5.8.0",
     "vitest": "^5.1.1"
   },
-  "license": "Apache-2.0",
   "overrides": {
     "tree-sitter-cpp": {
       "tree-sitter-c": "$tree-sitter-c"

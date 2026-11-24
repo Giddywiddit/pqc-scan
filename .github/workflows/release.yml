@@ -1,0 +1,31 @@
+name: Release
+
+# Publishes to npm when a GitHub release is published, through npm's trusted publishing: no npm token is stored
+# anywhere, and npm adds a provenance statement saying which commit and workflow built the package. The trusted
+# publisher (this repository and release.yml) is set in the package's settings on npmjs.com, with "npm publish" allowed.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: node scripts/check-package.mjs
+      # The release tag must match the version in package.json (v0.1.0 for 0.1.0).
+      - env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: test "$TAG" = "v$(node -p "require('./package.json').version")"
+      - run: npm publish

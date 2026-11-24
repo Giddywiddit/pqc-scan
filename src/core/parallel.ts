@@ -69,7 +69,9 @@ class Pool {
   private readonly workers: Worker[];
 
   constructor(threads: number, rules: ModuleRules[]) {
-    this.workers = Array.from({ length: threads }, () => new Worker(new URL('./scan-worker.ts', import.meta.url), { workerData: { rules } }));
+    // `.ts` when run from source, `.js` once built.
+    const worker = new URL(import.meta.url.endsWith('.ts') ? './scan-worker.ts' : './scan-worker.js', import.meta.url);
+    this.workers = Array.from({ length: threads }, () => new Worker(worker, { workerData: { rules } }));
   }
 
   /** Runs one job per index on the threads, largest file first, so no thread is left with a long tail. */

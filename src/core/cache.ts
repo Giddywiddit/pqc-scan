@@ -1,17 +1,23 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Finding } from './types.ts';
 
 interface Stored { version: string; files: Record<string, Finding[]> }
 /** The file on disk: the stored results as JSON text, and, when a key is set, an HMAC-SHA256 of that exact text. */
 interface Saved { body: string; mac?: string }
 
-const projectRoot = new URL('../../', import.meta.url).pathname;
+const projectRoot = fileURLToPath(new URL('../../', import.meta.url));
+/** The scanner's own code: `src` when working on it, `dist` in the published package. */
+const codeFolder = fileURLToPath(new URL('../', import.meta.url)).slice(projectRoot.length).replace(/[\\/]$/, '');
+
+const require = createRequire(import.meta.url);
 
 /**
- * A fingerprint of everything that decides what a scan finds: the scanner's own code, its rules and the exact
- * dependency versions. When any of them changes, every cached result is thrown away.
+ * A fingerprint of everything that decides what a scan finds: the scanner's own code, its rules, the grammars and the
+ * exact versions of the packages it reads code with. When any of them changes, every cached result is thrown away.
  */
 function toolVersion(): string {
   const hash = createHash('sha256');
@@ -22,9 +28,17 @@ function toolVersion(): string {
       else hash.update(path).update(readFileSync(join(projectRoot, path)));
     }
   };
-  add('src');
+  add(codeFolder);
   add('rules');
-  hash.update(readFileSync(join(projectRoot, 'package-lock.json')));
+  if (existsSync(join(projectRoot, 'grammars'))) add('grammars');
+  hash.update(readFileSync(join(projectRoot, 'package.json')));
+  for (const name of ['typescript', 'web-tree-sitter', 'yaml', 'tree-sitter-c', 'tree-sitter-cpp', 'tree-sitter-rust', 'tree-sitter-go']) {
+    try {
+      hash.update(`${name}@${(JSON.parse(readFileSync(require.resolve(`${name}/package.json`), 'utf8')) as { version: string }).version}`);
+    } catch {
+      // The grammar packages are not installed with the published package, which carries their files in grammars/.
+    }
+  }
   return hash.digest('hex');
 }
 

@@ -49,3 +49,16 @@ Every fixed bug becomes a permanent test in `test/fixtures/issues/`.
 ## Commits
 
 Each commit is one complete, tested change with a message in the form `#N short description`.
+
+## Building and releasing
+
+The published package is plain JavaScript: `npm run build` compiles `src/` into `dist/` and copies the four tree-sitter
+grammars (`.wasm` files, with their licences) into `grammars/`, so users do not install the grammar packages. `npm pack`
+runs the build. `node scripts/check-package.mjs` packs the package, installs it into an empty folder and checks it gives
+the same report as the source on every fixture folder; CI runs it on every change, and also runs the GitHub Action in
+`action.yml` on the packed package.
+
+To release: set the version in `package.json`, push, and publish a GitHub release tagged `v<version>`. The `Release`
+workflow (`.github/workflows/release.yml`) runs the tests and publishes to npm through npm's trusted publishing, so no
+npm token is stored.
+

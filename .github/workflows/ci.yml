@@ -38,3 +38,43 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=moderate
+
+  # The published package: built, packed, installed into an empty folder, and checked against the source.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/check-package.mjs
+
+  # The GitHub Action in this repository, run on the fixtures with the package packed from this commit.
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - id: pack
+        run: echo "file=$RUNNER_TEMP/$(npm pack --silent --pack-destination "$RUNNER_TEMP" | tail -n 1)" >> "$GITHUB_OUTPUT"
+      - id: scan
+        uses: ./
+        with:
+          path: test/fixtures/c
+          package: ${{ steps.pack.outputs.file }}
+          upload-sarif: 'false'
+          fail-on-findings: 'false'
+          cbom: pqc-scan.cbom.json
+      - name: Check the action's results
+        env:
+          EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
+        run: |
+          test "$EXIT_CODE" = 1
+          node -e "const s = JSON.parse(require('fs').readFileSync('pqc-scan.sarif', 'utf8')); if (s.runs[0].results.length === 0) process.exit(1)"
+          node -e "const c = JSON.parse(require('fs').readFileSync('pqc-scan.cbom.json', 'utf8')); if (c.specVersion !== '1.7' || c.components.length === 0) process.exit(1)"

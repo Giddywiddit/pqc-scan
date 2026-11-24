@@ -1,0 +1,84 @@
+name: pqc-scan
+description: Finds the cryptography in your code and flags what a quantum computer could break, as GitHub code scanning alerts.
+author: Giddywiddit
+branding:
+  icon: shield
+  color: purple
+
+inputs:
+  path:
+    description: The folder or file to scan, relative to the repository root.
+    default: .
+  sarif:
+    description: Where to write the SARIF file of findings that need action. Empty to write none.
+    default: pqc-scan.sarif
+  upload-sarif:
+    description: Upload the SARIF file to GitHub code scanning (needs the `security-events write` permission).
+    default: 'true'
+  cbom:
+    description: Where to write the CycloneDX cryptography bill of materials (CBOM). Empty to write none.
+    default: ''
+  baseline:
+    description: A baseline file written with --write-baseline. Findings it lists do not fail the step.
+    default: ''
+  fail-on-findings:
+    description: Fail the step when there is a new finding marked vulnerable, needs-review or unresolved.
+    default: 'true'
+  args:
+    description: More command-line options, such as --max-file-size 50.
+    default: ''
+  package:
+    description: The npm package to run. Defaults to the version of pqc-scan matching this action's tag (latest otherwise).
+    default: ''
+
+outputs:
+  exit-code:
+    description: 0 when nothing needs action, 1 when something does, 2 when the scan could not run.
+    value: ${{ steps.scan.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+
+    - id: scan
+      shell: bash
+      # Inputs are passed through the environment, never pasted into the script, so they cannot run as commands.
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_CBOM: ${{ inputs.cbom }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_ARGS: ${{ inputs.args }}
+        INPUT_PACKAGE: ${{ inputs.package }}
+        ACTION_REF: ${{ github.action_ref }}
+      run: |
+        package="$INPUT_PACKAGE"
+        if [ -z "$package" ]; then
+          if [[ "$ACTION_REF" =~ ^v?([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then package="pqc-scan@${BASH_REMATCH[1]}"; else package="pqc-scan@latest"; fi
+        fi
+        options=(--quiet)
+        [ -n "$INPUT_SARIF" ] && options+=(--sarif "$INPUT_SARIF")
+        [ -n "$INPUT_CBOM" ] && options+=(--cbom "$INPUT_CBOM")
+        [ -n "$INPUT_BASELINE" ] && options+=(--baseline "$INPUT_BASELINE")
+        read -r -a extra <<< "$INPUT_ARGS"
+        set +e
+        npx --yes --package="$package" pqc-scan "$INPUT_PATH" "${options[@]}" "${extra[@]}"
+        status=$?
+        set -e
+        echo "exit-code=$status" >> "$GITHUB_OUTPUT"
+        if [ "$status" -ge 2 ]; then exit "$status"; fi
+
+    - if: always() && inputs.upload-sarif == 'true' && inputs.sarif != '' && steps.scan.outputs.exit-code != '2'
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ inputs.sarif }}
+        category: pqc-scan
+
+    - if: inputs.fail-on-findings == 'true' && steps.scan.outputs.exit-code == '1'
+      shell: bash
+      run: |
+        echo "pqc-scan found cryptography that needs action (see the alerts or the log above)."
+        exit 1
