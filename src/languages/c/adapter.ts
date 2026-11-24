@@ -3,6 +3,7 @@ import type { Node, Parser } from 'web-tree-sitter';
 import type { LanguageAdapter } from '../../core/language.ts';
 import { lookup, ruleFindings } from '../../core/match.ts';
 import { argumentsOf, unreadableFindings } from '../../core/syntax.ts';
+import { callSitesIn, markWrapper } from '../../core/wrappers.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
 
@@ -112,10 +113,11 @@ export function passes(text: string): { source: string; where: string }[] {
 
 /** The findings for one call on `line` matched by `rule`, with its argument nodes; `matched` names what matched. */
 export function callFindings(args: Node[], line: number, rule: Rule, matched: string, file: string, where: string): Finding[] {
-  return ruleFindings(rule, file, line, [{ note: `matched ${matched}${where}` }], () => ({
+  const findings = ruleFindings(rule, file, line, [{ note: `matched ${matched}${where}` }], () => ({
     names: argumentNames(args[rule.algorithmFrom!.arg], rule.values ?? {}),
     qualifiers: [],
   }));
+  return rule.algorithmFrom ? markWrapper(findings, rule, args[rule.algorithmFrom.arg], file) : findings;
 }
 
 /** Scans one parsed pass with the C grammar's query, adding to `findings`. */
@@ -171,4 +173,5 @@ export const c: LanguageAdapter = {
   extensions: ['.c'],
   load: loadC,
   scanSource,
+  callSites: (text) => callSitesIn(grammar().parser, blankDirectives(text)),
 };

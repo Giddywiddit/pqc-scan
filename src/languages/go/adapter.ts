@@ -4,6 +4,7 @@ import type { LanguageAdapter } from '../../core/language.ts';
 import { lookup as lookupValue, ruleFindings } from '../../core/match.ts';
 import { type NameIndex, LineReporter, indexRules } from '../../core/matcher.ts';
 import { escape, unreadableFindings } from '../../core/syntax.ts';
+import { callSitesIn, markWrapper } from '../../core/wrappers.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
 import { type CLookup, cLookupFor } from '../c/api.ts';
@@ -155,10 +156,11 @@ function scanGoTree(root: Node, lookup: GoLookup, file: string, findings: Findin
   const report = (rule: Rule, name: string, node: Node, args?: Node[]): void => {
     const line = node.startPosition.row + 1;
     if (!args) return reporter.name(rule, line, `matched ${name}`);
-    reporter.call(rule, line, ruleFindings(rule, file, line, [{ note: `matched ${name}` }], () => ({
+    const findings = ruleFindings(rule, file, line, [{ note: `matched ${name}` }], () => ({
       names: argumentNames(args[rule.algorithmFrom!.arg], rule.values ?? {}),
       qualifiers: [],
-    })));
+    }));
+    reporter.call(rule, line, rule.algorithmFrom ? markWrapper(findings, rule, args[rule.algorithmFrom.arg], file) : findings);
   };
 
   /** `pkg.Member`, written at `node`, where `pkg` is the package's name in this file. */
@@ -244,4 +246,5 @@ export const go: LanguageAdapter = {
       (ERROR) @error`);
   },
   scanSource,
+  callSites: (text) => callSitesIn(parser!, text),
 };

@@ -1,4 +1,5 @@
 import type { Finding, ModuleRules } from './types.ts';
+import type { CallSite } from './wrappers.ts';
 
 export interface ImportRef {
   specifier: string;
@@ -20,6 +21,11 @@ export interface LanguageAdapter {
   load?(): Promise<void>;
   /** Report every crypto use in one file. `file` is the name to put in findings. */
   scanSource(text: string, file: string, rules: ModuleRules[]): Finding[];
+  /**
+   * Optional: the calls in one file, with their arguments. With it, a function whose crypto algorithm is one of its
+   * parameters (marked by `scanSource` with `wrapper`) is followed to where it is called.
+   */
+  callSites?(text: string): CallSite[];
   /** Optional. Together these enable the cross-file wrapper report for this language. */
   localImports?(text: string, file: string): ImportRef[];
   resolveImport?(from: string, specifier: string, known: ReadonlySet<string>): string | undefined;

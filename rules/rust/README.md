@@ -30,6 +30,10 @@ Choices worth knowing:
 - **Macros.** Rust does not parse a macro's arguments until the macro is expanded, so the arguments (`assert_eq!(Sha256::digest(data), ...)`) and the code inside a `macro_rules!` definition are searched as text for the same paths, with strings and comments left out. A finding inside a `macro_rules!` is reported on the line where it is written. A digest name inside a macro is read only when it is written directly as a string (`from_name("sha256")`).
 - **Code the parser cannot read** that names a rule crate (`ring::digest::SHA256`) is reported as ⚠️ `unresolved`.
 
+## Functions that choose the algorithm
+
+A function of the project's own that passes one of its parameters on as the algorithm (`fn digest(name: &str)` calling `MessageDigest::from_name(name)`) is followed to where it is called, and a call that passes a written value (`digest("sha256")`) is reported with that algorithm. A private function is matched only in its own file, and a method called on a value (`self.digest(...)`) is not followed. See [Functions that choose the algorithm from a parameter](../wrappers.md).
+
 ## Limits specific to Rust
 
 - A method call on a value (`hasher.update(data)`, `key.sign(msg)`) is not reported on its own. The algorithm is reported where the value's type or algorithm constant is named.

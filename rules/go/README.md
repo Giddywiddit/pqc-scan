@@ -32,6 +32,10 @@ Choices worth knowing:
 - **Versions of one library.** golang-jwt v4 and v3 and dgrijalva/jwt-go have the same names as golang-jwt v5 and are read as v5.
 - **Code the parser cannot read** that uses a rule package by its name in the file (`rsa.`) is reported as ⚠️ `unresolved`.
 
+## Functions that choose the algorithm
+
+A function of the project's own that passes one of its parameters on as the algorithm (`func method(name string)` calling `jwt.GetSigningMethod(name)`) is followed to where it is called, across packages, and a call that passes a written value (`sign.Method("ES256")`) is reported with that algorithm. An unexported function is matched only in its own package, and a method called on a value is not followed. See [Functions that choose the algorithm from a parameter](../wrappers.md).
+
 ## Limits specific to Go
 
 - A method call on a value (`h.Write(data)`, `key.Sign(...)`) is not reported on its own. The algorithm is reported where the value's type or constructor is named.

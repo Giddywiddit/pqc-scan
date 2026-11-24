@@ -31,6 +31,10 @@ Two Botan details are reported as 🔍 rather than ✅:
 
 A `.h` file can hold C or C++, so it is read by the C++ adapter and checked against both the C and the C++ rules. It is read with the C++ grammar, unless the C++ grammar could not read all of it and found nothing only C++ has (`namespace`, `class`, `template`, `using` or `::`). In that case the C grammar is tried too, and whichever leaves less of the file unreadable is used. C code that uses a C++ keyword as a name (`int new = 2;`) is the usual reason.
 
+## Functions that choose the algorithm
+
+A function of the project's own that passes one of its parameters on as the algorithm is followed to where it is called, as in C. `Class::f` is matched only when called as `Class::f(...)` or from its own file, and a method called on an object (`h.pick("sha1")`) is not followed, because the object's type is not known. See [Functions that choose the algorithm from a parameter](../wrappers.md).
+
 ## Limits specific to C++
 
 - A `using namespace` written in another file (usually a header the file includes) is not seen, so unqualified names that rely on it are not matched.

@@ -5,7 +5,8 @@ import { LineReporter } from '../../core/matcher.ts';
 import { argumentsOf, escape, hasAncestor, segments, unreadableBytes, unreadableFindings } from '../../core/syntax.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
-import { type CLookup, callFindings, cLookupFor, grammar as cGrammar, loadC, passes, scanCTree } from '../c/api.ts';
+import { callSitesIn } from '../../core/wrappers.ts';
+import { type CLookup, blankDirectives, callFindings, cLookupFor, grammar as cGrammar, loadC, passes, scanCTree } from '../c/api.ts';
 
 let parser: Parser | undefined;
 let query: Query | undefined;
@@ -222,4 +223,5 @@ export const cpp: LanguageAdapter = {
     cxxOnly ??= new Query(parser.language!, '[(namespace_definition) (class_specifier) (template_declaration) (using_declaration) (qualified_identifier)] @cxx');
   },
   scanSource,
+  callSites: (text) => callSitesIn(parser!, blankExportMacros(blankDirectives(text))),
 };

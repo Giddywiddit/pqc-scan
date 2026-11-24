@@ -17,6 +17,32 @@ export interface Finding {
   status: Status;
   trace: TraceStep[];
   note?: string;
+  /** Internal, removed before output: the algorithm is a parameter of the function around this call (see wrappers.ts). */
+  wrapper?: WrapperMark;
+}
+
+/** A function definition, and how it can be called (see wrappers.ts). */
+export interface FunctionInfo {
+  name: string;
+  parameters: string[];
+  /** A free function; `Class::f` or `Type::f`, called through its qualifier; or a method called on a value. */
+  kind: 'function' | 'associated' | 'method';
+  qualifier?: string;
+  /** Where it can be called from: its own file (C `static`, private Rust), its Go package (folder), or anywhere. */
+  visibility: 'file' | 'package' | 'everywhere';
+}
+
+/** A function whose crypto algorithm is one of its parameters, `parameter` (from 0). */
+export interface WrapperMark {
+  function: FunctionInfo;
+  parameter: number;
+  ruleId: string;
+  file: string;
+  line: number;
+  /** The crypto call the chain of wrappers leads to, as `file:line:ruleId`. */
+  root: string;
+  /** The language of the file the function is in; set by the core. */
+  language?: string;
 }
 
 export interface AlgorithmValue {

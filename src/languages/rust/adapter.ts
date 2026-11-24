@@ -4,6 +4,7 @@ import type { LanguageAdapter } from '../../core/language.ts';
 import { lookup as lookupValue, ruleFindings } from '../../core/match.ts';
 import { type NameIndex, LineReporter, indexRules } from '../../core/matcher.ts';
 import { argumentsOf, escape, hasAncestor, segments, unreadableFindings } from '../../core/syntax.ts';
+import { callSitesIn, markWrapper } from '../../core/wrappers.ts';
 import { createParser } from '../../core/tree-sitter.ts';
 import type { Finding, ModuleRules, Rule } from '../../core/types.ts';
 
@@ -160,10 +161,12 @@ function scanRustTree(root: Node, lookup: RustLookup, file: string, findings: Fi
   /** Reports one match: a use of a name, or a call with the argument it may read the algorithm from (`how` says where). */
   const report = (match: { rule: Rule; name: string; call: boolean }, line: number, argument: () => Node | string | undefined, how = ''): void => {
     if (!match.call) return reporter.name(match.rule, line, `matched ${match.name}`);
-    reporter.call(match.rule, line, ruleFindings(match.rule, file, line, [{ note: `matched ${match.name}${how}` }], () => {
-      const value = argument();
-      return { names: typeof value === 'string' ? [value] : argumentNames(value, match.rule.values ?? {}), qualifiers: [] };
+    const value = argument();
+    const findings = ruleFindings(match.rule, file, line, [{ note: `matched ${match.name}${how}` }], () => ({
+      names: typeof value === 'string' ? [value] : argumentNames(value, match.rule.values ?? {}),
+      qualifiers: [],
     }));
+    reporter.call(match.rule, line, typeof value === 'string' ? findings : markWrapper(findings, match.rule, value, file));
   };
 
   /** The call `node` is the function of, if any (`f(x)`, `f::<T>(x)`). */
@@ -263,4 +266,5 @@ export const rust: LanguageAdapter = {
       (ERROR) @error`);
   },
   scanSource,
+  callSites: (text) => callSitesIn(parser!, text),
 };

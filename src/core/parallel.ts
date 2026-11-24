@@ -2,8 +2,8 @@ import { readFileSync, statSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import { ResultCache } from './cache.ts';
-import { DEFAULT_MAX_FILE_BYTES, finishScan, planScan, rulesByAdapter, scanFile, tooLargeFinding } from './scan.ts';
-import type { PlannedFile } from './scan.ts';
+import { DEFAULT_MAX_FILE_BYTES, finishScan, planScan, rulesByAdapter, scanFile, tooLargeFinding, wrapperCallerFiles } from './scan.ts';
+import type { CallSite } from './wrappers.ts';
 import type { Finding, ModuleRules } from './types.ts';
 import { languages } from '../languages/index.ts';
 
@@ -18,9 +18,9 @@ export interface ParallelOptions {
   maxFileBytes?: number;
 }
 
-/** A job sent to a worker, and what it sends back. */
-export interface Job { index: number; path: string; name: string; language: string; maxBytes: number }
-export type Reply = { index: number; findings: Finding[] } | { index: number; error: string };
+/** A job sent to a worker: scan a file, or list its calls (for following wrappers, see wrappers.ts). */
+export interface Job { kind: 'scan' | 'calls'; index: number; path: string; name: string; language: string; maxBytes: number }
+export type Reply = { index: number; findings: Finding[] } | { index: number; sites: CallSite[] } | { index: number; error: string };
 
 /**
  * Same result as `scan` for the registered languages, with the files parsed on several threads when there is enough
@@ -46,35 +46,57 @@ export async function scanInParallel(target: string, rules: ModuleRules[], optio
   if (threads < 2) {
     const rulesFor = rulesByAdapter(rules, languages);
     for (const index of pending) findings[index] = scanFile(files[index], rulesFor, maxBytes);
-  } else {
-    await scanOnThreads(files, pending, sizes, rules, threads, findings, maxBytes);
+    if (cache) for (const index of pending) cache.set(keys[index], findings[index]);
+    return finishScan(root, files, findings, rules);
   }
-  if (cache) for (const index of pending) cache.set(keys[index], findings[index]);
-  return finishScan(root, files, findings);
+  const pool = new Pool(threads, rules);
+  try {
+    await pool.run(pending, sizes, (index) => ({ kind: 'scan', index, path: files[index].path, name: files[index].name, language: files[index].adapter.id, maxBytes }),
+      (reply) => { if ('findings' in reply) findings[reply.index] = reply.findings; });
+    if (cache) for (const index of pending) cache.set(keys[index], findings[index]);
+    // The files the first round of following wrappers will read are parsed on the threads too.
+    const sites = new Map<string, CallSite[]>();
+    await pool.run(wrapperCallerFiles(files, findings, rules), sizes, (index) => ({ kind: 'calls', index, path: files[index].path, name: files[index].name, language: files[index].adapter.id, maxBytes }),
+      (reply) => { if ('sites' in reply) sites.set(files[reply.index].path, reply.sites); });
+    return finishScan(root, files, findings, rules, sites);
+  } finally {
+    await pool.close();
+  }
 }
 
-/** Scans the `pending` files on `threads` worker threads, writing each file's findings into `findings`. */
-async function scanOnThreads(files: PlannedFile[], pending: number[], sizes: number[], rules: ModuleRules[], threads: number, findings: Finding[][], maxBytes: number): Promise<void> {
-  // Largest files first, handed out one at a time as threads finish, so no thread is left with a long tail.
-  const queue = [...pending].sort((left, right) => sizes[right] - sizes[left]);
-  const workers = Array.from({ length: threads }, () => new Worker(new URL('./scan-worker.ts', import.meta.url), { workerData: { rules } }));
-  try {
-    await Promise.all(workers.map((worker) => new Promise<void>((resolve, reject) => {
+/** Worker threads that each load the parsers once and then take jobs, largest file first, as they finish. */
+class Pool {
+  private readonly workers: Worker[];
+
+  constructor(threads: number, rules: ModuleRules[]) {
+    this.workers = Array.from({ length: threads }, () => new Worker(new URL('./scan-worker.ts', import.meta.url), { workerData: { rules } }));
+  }
+
+  /** Runs one job per index on the threads, largest file first, so no thread is left with a long tail. */
+  async run(indexes: number[], sizes: number[], job: (index: number) => Job, onReply: (reply: Reply) => void): Promise<void> {
+    const queue = [...indexes].sort((left, right) => sizes[right] - sizes[left]);
+    await Promise.all(this.workers.map((worker) => new Promise<void>((resolve, reject) => {
       const next = (): void => {
         const index = queue.shift();
-        if (index === undefined) return resolve();
-        const { path, name, adapter } = files[index];
-        worker.postMessage({ index, path, name, language: adapter.id, maxBytes } satisfies Job);
+        if (index === undefined) {
+          worker.off('message', receive);
+          worker.off('error', reject);
+          return resolve();
+        }
+        worker.postMessage(job(index));
       };
-      worker.on('message', (reply: Reply) => {
+      const receive = (reply: Reply): void => {
         if ('error' in reply) return reject(new Error(reply.error));
-        findings[reply.index] = reply.findings;
+        onReply(reply);
         next();
-      });
+      };
+      worker.on('message', receive);
       worker.on('error', reject);
       next();
     })));
-  } finally {
-    await Promise.all(workers.map((worker) => worker.terminate()));
+  }
+
+  async close(): Promise<void> {
+    await Promise.all(this.workers.map((worker) => worker.terminate()));
   }
 }
