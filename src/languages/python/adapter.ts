@@ -70,11 +70,39 @@ function ruleFor(path: string, lookup: ReturnType<typeof indexRules>): Rule | un
   return lookup.functions.get(path) ?? lookup.names.get(path);
 }
 
+function shadowedNames(root: Node): Array<{ start: number; end: number; names: Set<string> }> {
+  const ranges: Array<{ start: number; end: number; names: Set<string> }> = [];
+  const walk = (node: Node): void => {
+    if (node.type === 'function_definition') {
+      const names = new Set<string>();
+      const parameters = node.childForFieldName('parameters');
+      for (const parameter of parameters?.namedChildren ?? []) {
+        const name = parameter.type === 'identifier' ? parameter.text : parameter.childForFieldName('name')?.text;
+        if (name) names.add(name);
+      }
+      const collectAssignments = (child: Node): void => {
+        if (child.type === 'assignment') {
+          const left = child.childForFieldName('left');
+          if (left?.type === 'identifier') names.add(left.text);
+        }
+        for (const nested of child.namedChildren) collectAssignments(nested);
+      };
+      const body = node.childForFieldName('body');
+      if (body) collectAssignments(body);
+      ranges.push({ start: node.startIndex, end: node.endIndex, names });
+    }
+    for (const child of node.namedChildren) walk(child);
+  };
+  walk(root);
+  return ranges;
+}
+
 function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[] {
   if (!parser) throw new Error('The Python grammar is not loaded: call loadLanguages() before scanning.');
   const tree = parser.parse(text);
   if (!tree) throw new Error(`${file}: the Python parser returned no tree.`);
   const bindings = imports(tree.rootNode);
+  const shadows = shadowedNames(tree.rootNode);
   const lookup = indexRules(rules.filter((group) => group.language === 'python'));
   const findings: Finding[] = [];
   const reporter = new LineReporter(file, findings);
@@ -86,9 +114,10 @@ function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[]
       if (path) {
         const [head, ...rest] = path.split('.');
         const binding = bindings.get(head);
+        const shadow = shadows.some((range) => node.startIndex >= range.start && node.endIndex <= range.end && range.names.has(head));
         const full = binding ? [binding.path, ...rest].join('.') : null;
         const rule = full ? ruleFor(full, lookup) : undefined;
-        if (rule) {
+        if (rule && !shadow) {
           const args = argumentsOf(node);
           const value = rule.algorithmFrom ? argumentNames(args[rule.algorithmFrom.arg]) : null;
           const result = ruleFindings(rule, file, node.startPosition.row + 1, [{ note: `matched ${full}` }], () => ({ names: value, qualifiers: [] }));
@@ -99,7 +128,7 @@ function scanSource(text: string, file: string, rules: ModuleRules[]): Finding[]
     for (const child of node.namedChildren) walk(child);
   };
   walk(tree.rootNode);
-  if (errors.length > 0 && findings.length === 0) findings.push({ ruleId: 'parse-error', file, line: errors[0].startPosition.row + 1, algorithm: null, category: 'unknown', status: 'unresolved', trace: [], note: 'Source could not be parsed.' });
+  if (errors.length > 0) findings.push({ ruleId: 'parse-error', file, line: errors[0].startPosition.row + 1, algorithm: null, category: 'unknown', status: 'unresolved', trace: [], note: 'Source could not be parsed completely.' });
   tree.delete();
   return findings.sort((a, b) => a.line - b.line);
 }
