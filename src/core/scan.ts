@@ -33,8 +33,20 @@ export function rulesByAdapter(rules: ModuleRules[], adapters: readonly Language
   }));
 }
 
+/** Files larger than this are not read (`--max-file-size`). The largest source file in the projects tested is 9.1 MB. */
+export const DEFAULT_MAX_FILE_BYTES = 20 * 1024 * 1024;
+
+/** The finding for a file too large to read: reported, not skipped, so a large file cannot hide anything. */
+export function tooLargeFinding(name: string, bytes: number, maxBytes: number): Finding {
+  const mb = (size: number) => `${Number((size / 1024 / 1024).toFixed(1))} MB`;
+  return finding(name, 1, 'file-too-large', 'unknown', null, 'unresolved',
+    `Not scanned: the file is ${mb(bytes)}, over the ${mb(maxBytes)} limit. Check it by hand, or scan it with a higher --max-file-size.`);
+}
+
 /** The findings in one file. */
-export function scanFile(file: PlannedFile, rulesFor: Map<LanguageAdapter, ModuleRules[]>): Finding[] {
+export function scanFile(file: PlannedFile, rulesFor: Map<LanguageAdapter, ModuleRules[]>, maxBytes = DEFAULT_MAX_FILE_BYTES): Finding[] {
+  const bytes = statSync(file.path).size;
+  if (bytes > maxBytes) return [tooLargeFinding(file.name, bytes, maxBytes)];
   return file.adapter.scanSource(readFileSync(file.path, 'utf8'), file.name, rulesFor.get(file.adapter)!);
 }
 

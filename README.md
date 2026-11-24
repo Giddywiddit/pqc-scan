@@ -59,7 +59,8 @@ Cryptography found:
 |---|---|
 | `--json` | Prints the results as JSON for other programs. The format is described by [`schema/report-v1.schema.json`](schema/report-v1.schema.json); its `schemaVersion` changes only when a change could break a program that reads it. |
 | `--quiet` | Hides the cat banner. |
-| `--cache <file>` | Saves each file's results in `<file>` and reuses them on the next run while the file is unchanged. The saved results are discarded whenever the scanner or its rules change. |
+| `--cache <file>` | Saves each file's results in `<file>` and reuses them on the next run while the file is unchanged. The saved results are discarded whenever the scanner or its rules change. Anyone who can change the cache file can change the results, so keep it outside the folder you scan (the tool refuses a cache inside it), or set the environment variable `PQC_SCAN_CACHE_KEY` to a secret: the cache is then signed, and a cache that was changed or signed with another key is not used. |
+| `--max-file-size <MB>` | Files larger than this (default 20 MB) are not read, and are reported as ⚠️ not scanned. |
 
 Exit status: 0 when every finding is ✅ or nothing was found, 1 when any finding is ❌, 🔍 or ⚠️, and 2 when the scan could not run (for example, the path does not exist).
 

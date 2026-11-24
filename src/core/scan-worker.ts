@@ -9,11 +9,11 @@ const port = parentPort!;
 const ready = loadLanguages();
 const rulesFor = rulesByAdapter((workerData as { rules: ModuleRules[] }).rules, languages);
 
-port.on('message', async ({ index, path, name, language }: Job) => {
+port.on('message', async ({ index, path, name, language, maxBytes }: Job) => {
   await ready;
   try {
     const adapter = languages.find((candidate) => candidate.id === language)!;
-    port.postMessage({ index, findings: scanFile({ path, name, adapter }, rulesFor) } satisfies Reply);
+    port.postMessage({ index, findings: scanFile({ path, name, adapter }, rulesFor, maxBytes) } satisfies Reply);
   } catch (error) {
     port.postMessage({ index, error: error instanceof Error ? error.message : String(error) } satisfies Reply);
   }
