@@ -7,6 +7,7 @@ import { ResultCache } from './core/cache.ts';
 import { scanInParallel } from './core/parallel.ts';
 import { loadLanguages } from './core/scan.ts';
 import { fingerprints, readBaseline, toBaseline } from './output/baseline.ts';
+import { toCbom } from './output/cbom.ts';
 import { toReport } from './output/json.ts';
 import { toSarif } from './output/sarif.ts';
 import { MASCOT_BANNER, printTable } from './output/text.ts';
@@ -14,7 +15,7 @@ import { MASCOT_BANNER, printTable } from './output/text.ts';
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   strict: false,
-  options: { json: { type: 'boolean' }, quiet: { type: 'boolean', short: 'q' }, 'no-banner': { type: 'boolean' }, cache: { type: 'string' }, 'max-file-size': { type: 'string' }, sarif: { type: 'string' }, baseline: { type: 'string' }, 'write-baseline': { type: 'string' } },
+  options: { json: { type: 'boolean' }, quiet: { type: 'boolean', short: 'q' }, 'no-banner': { type: 'boolean' }, cache: { type: 'string' }, 'max-file-size': { type: 'string' }, sarif: { type: 'string' }, cbom: { type: 'string' }, baseline: { type: 'string' }, 'write-baseline': { type: 'string' } },
 });
 const json = values.json === true;
 const quiet = values.quiet === true || values['no-banner'] === true;
@@ -23,11 +24,11 @@ const showBanner = !json && !quiet;
 
 if (!target) {
   if (showBanner) console.log(MASCOT_BANNER);
-  console.error('Usage: pqc-scan <path> [--json] [--quiet] [--sarif <file>] [--baseline <file>] [--write-baseline <file>] [--cache <file>] [--max-file-size <MB>]');
+  console.error('Usage: pqc-scan <path> [--json] [--quiet] [--sarif <file>] [--cbom <file>] [--baseline <file>] [--write-baseline <file>] [--cache <file>] [--max-file-size <MB>]');
   process.exit(2);
 }
 
-for (const [option, example] of [['cache', '~/.cache/pqc-scan.json'], ['sarif', 'pqc-scan.sarif'], ['baseline', 'pqc-scan-baseline.json'], ['write-baseline', 'pqc-scan-baseline.json']] as const) {
+for (const [option, example] of [['cache', '~/.cache/pqc-scan.json'], ['sarif', 'pqc-scan.sarif'], ['cbom', 'cbom.json'], ['baseline', 'pqc-scan-baseline.json'], ['write-baseline', 'pqc-scan-baseline.json']] as const) {
   if (values[option] !== undefined && typeof values[option] !== 'string') {
     console.error(`pqc-scan: --${option} needs a file name, for example --${option} ${example}`);
     process.exit(2);
@@ -75,6 +76,8 @@ cache?.save();
 const prints = baseline || values.sarif || values['write-baseline'] ? fingerprints(findings, path) : [];
 if (typeof values['write-baseline'] === 'string') writeFileSync(resolve(values['write-baseline']), `${JSON.stringify(toBaseline(findings, prints), null, 2)}\n`);
 if (typeof values.sarif === 'string') writeFileSync(resolve(values.sarif), JSON.stringify(toSarif(findings, prints, baseline)));
+// The CBOM is the full inventory: every finding, whatever the baseline says.
+if (typeof values.cbom === 'string') writeFileSync(resolve(values.cbom), `${JSON.stringify(toCbom(findings, path), null, 2)}\n`);
 // With a baseline, the findings it lists are left out of the output and do not change the exit status.
 const shown = baseline ? findings.filter((_, index) => !baseline.has(prints[index])) : findings;
 const known = baseline ? findings.length - shown.length : undefined;
