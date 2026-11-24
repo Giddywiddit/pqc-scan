@@ -19,8 +19,8 @@ Choices worth knowing:
 
 - **A package with one algorithm is matched by its import path.** Any use of `crypto/rsa`, `crypto/ecdsa`, `crypto/md5`, `golang.org/x/crypto/curve25519` and the others listed by import path counts, including types such as `*rsa.PrivateKey` in a struct field or a type switch.
 - **HMAC, HKDF and PBKDF2** take the hash as an argument (`hmac.New(sha256.New, key)`), and only the hash is reported.
-- **AES** is reported as ⚠️ `unresolved`, because Go chooses AES-128, -192 or -256 by the length of the key passed to `aes.NewCipher`.
-- **TLS and SSH set-up** is reported as ⚠️ `unresolved` where a `tls.Config`, `ssh.ClientConfig`, `ssh.ServerConfig` or `ssh.Config` is built, with what the defaults are. Go 1.24 and later offer the hybrid post-quantum key exchange X25519MLKEM768 first when `CurvePreferences` is not set (unless `GODEBUG=tlsmlkem=0`); Go 1.26 added SecP256r1MLKEM768 and SecP384r1MLKEM1024 to the defaults. golang.org/x/crypto v0.42.0 and later, with Go 1.24 or later, offer `mlkem768x25519-sha256` first for SSH when `KeyExchanges` is not set. A `tls.Config` named only as a type (`func f(c *tls.Config)`) is not reported.
+- **AES** is reported as `unresolved`, because Go chooses AES-128, -192 or -256 by the length of the key passed to `aes.NewCipher`.
+- **TLS and SSH set-up** is reported as `unresolved` where a `tls.Config`, `ssh.ClientConfig`, `ssh.ServerConfig` or `ssh.Config` is built, with what the defaults are. Go 1.24 and later offer the hybrid post-quantum key exchange X25519MLKEM768 first when `CurvePreferences` is not set (unless `GODEBUG=tlsmlkem=0`); Go 1.26 added SecP256r1MLKEM768 and SecP384r1MLKEM1024 to the defaults. golang.org/x/crypto v0.42.0 and later, with Go 1.24 or later, offer `mlkem768x25519-sha256` first for SSH when `KeyExchanges` is not set. A `tls.Config` named only as a type (`func f(c *tls.Config)`) is not reported.
 - **The `crypto/hpke` and CIRCL `hpke` key exchanges** are reported by what they are made of: `hpke.MLKEM768X25519()` as the hybrid X25519MLKEM768, `hpke.DHKEM(...)` as a classical elliptic-curve key exchange.
 
 ## How Go is read
@@ -30,11 +30,11 @@ Choices worth knowing:
 - **What counts.** A name counts wherever it is used: a call (`rsa.GenerateKey(...)`), a type (`*rsa.PrivateKey`), a constant (`crypto.SHA256`), or a function passed as a value (`sha256.New`). A struct listed as built (`tls.Config`) counts where it is built: `tls.Config{...}` or `&tls.Config{...}`.
 - **One use per line.** A name used twice on one line is reported once.
 - **Versions of one library.** golang-jwt v4 and v3 and dgrijalva/jwt-go have the same names as golang-jwt v5 and are read as v5.
-- **Code the parser cannot read** that uses a rule package by its name in the file (`rsa.`) is reported as ⚠️ `unresolved`.
+- **Code the parser cannot read** that uses a rule package by its name in the file (`rsa.`) is reported as `unresolved`.
 
 ## Functions that choose the algorithm
 
-A function of the project's own that passes one of its parameters on as the algorithm (`func method(name string)` calling `jwt.GetSigningMethod(name)`) is followed to where it is called, across packages, and a call that passes a written value (`sign.Method("ES256")`) is reported with that algorithm. An unexported function is matched only in its own package, and a method called on a value is not followed. See [Functions that choose the algorithm from a parameter](../wrappers.md).
+A function of the project's own that passes one of its parameters on as the algorithm (`func method(name string)` calling `jwt.GetSigningMethod(name)`) is followed to where it is called, across packages, and a call that passes a written value (`sign.Method("ES256")`) is reported with that algorithm. An unexported function is matched only in its own package, and a method called on a value is not followed. See [Functions that choose the algorithm from a parameter](../../docs/wrappers.md).
 
 ## Limits specific to Go
 

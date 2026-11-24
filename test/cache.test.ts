@@ -3,11 +3,12 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ResultCache } from '../src/core/cache.ts';
+import { ResultCache, installedVersion } from '../src/core/cache.ts';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
-const cli = (...args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8' });
-const cliWithKey = (key: string, ...args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8', env: { ...process.env, PQC_SCAN_CACHE_KEY: key } } satisfies SpawnSyncOptions);
+const root = fileURLToPath(new URL('..', import.meta.url));
+const cli = (...args: string[]) => spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8' });
+const cliWithKey = (key: string, ...args: string[]) => spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8', env: { ...process.env, PQC_SCAN_CACHE_KEY: key } } satisfies SpawnSyncOptions);
 // A cache is kept outside the folder being scanned (inside it, it is refused unless signed).
 const cacheOutside = () => join(mkdtempSync(join(tmpdir(), 'pqc-cache-store-')), 'cache.json');
 
@@ -120,4 +121,10 @@ describe('--max-file-size', { timeout: 30_000 }, () => {
     expect(result.status).toBe(2);
     expect(result.stderr).toMatch(/--max-file-size needs a size in MB/);
   });
+});
+
+it('finds the version of each package the scanner reads code with, for the cache fingerprint', () => {
+  // web-tree-sitter does not export its package.json, which once made its version drop out of the fingerprint.
+  for (const name of ['typescript', 'web-tree-sitter', 'yaml']) expect(installedVersion(name), name).toMatch(/^\d+\.\d+\.\d+/);
+  expect(installedVersion('no-such-package-pqc')).toBeUndefined();
 });

@@ -4,9 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Ajv } from 'ajv';
 import { describe, expect, it } from 'vitest';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
-const cli = (...args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', '--quiet', ...args], { cwd: root, encoding: 'utf8' });
+const root = fileURLToPath(new URL('..', import.meta.url));
+const cli = (...args: string[]) => spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', '--quiet', ...args], { cwd: root, encoding: 'utf8' });
 const outside = (name: string) => join(mkdtempSync(join(tmpdir(), 'pqc-out-')), name);
 
 // The official schema is JSON Schema draft-04; its only draft-04 parts are the `id` and `$schema` keywords, renamed
@@ -32,7 +33,7 @@ describe('--sarif', { timeout: 30_000 }, () => {
     expect(validateSarif(log), JSON.stringify(validateSarif.errors)).toBe(true);
     const results = log.runs[0].results.map((result: { ruleId: string; locations: { physicalLocation: { artifactLocation: { uri: string }; region: { startLine: number } } }[] }) =>
       `${result.locations[0].physicalLocation.artifactLocation.uri}:${result.locations[0].physicalLocation.region.startLine} ${result.ruleId}`);
-    // SHA-256 is ✅, so it is not an alert.
+    // SHA-256 is resistant, so it is not an alert.
     expect(results).toEqual(['keys.c:2 pqc-scan/vulnerable', 'keys.c:4 pqc-scan/needs-review']);
   });
 

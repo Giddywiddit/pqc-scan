@@ -1,5 +1,5 @@
 import { readFileSync, statSync } from 'node:fs';
-import { basename, extname, relative } from 'node:path';
+import { basename, extname, relative, sep } from 'node:path';
 import { ESCAPING_REFERENCE_RULE_ID, UNRESOLVED_ALGORITHM_NOTE, finding } from './finding.ts';
 import type { LanguageAdapter } from './language.ts';
 import type { Finding, FunctionInfo, ModuleRules } from './types.ts';
@@ -23,7 +23,8 @@ export function planScan(target: string, adapters: readonly LanguageAdapter[] = 
   const root = statSync(target).isDirectory() ? target : undefined;
   const byExtension = new Map(adapters.flatMap((adapter) => adapter.extensions.map((extension) => [extension, adapter] as const)));
   const files = sourceFiles(target, new Set(byExtension.keys()))
-    .map((path) => ({ path, name: root ? relative(root, path) : basename(path), adapter: byExtension.get(extname(path))! }));
+    // Reported file names use `/` on every system, so reports and baselines are the same on Windows.
+    .map((path) => ({ path, name: (root ? relative(root, path) : basename(path)).split(sep).join('/'), adapter: byExtension.get(extname(path))! }));
   return { root, files };
 }
 

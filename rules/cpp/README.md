@@ -13,9 +13,9 @@ C++ code also calls C libraries directly, so every library on the [C page](../c/
 
 Every class, function and namespace name in these rule files was checked against the library's header files when the rules were written: Crypto++ 8 from its October 2026 source, and Botan 3.14. Botan's algorithm-name strings were checked against its source and tests.
 
-Two Botan details are reported as 🔍 rather than ✅:
+Two Botan details are reported as `needs-review` rather than `observed-resistant`:
 
-- In Botan, `ML_KEM_PrivateKey` is another name for `Kyber_PrivateKey`, and the class holds either ML-KEM or the older pre-standard Kyber, depending on a mode value. The same is true of `Dilithium_PrivateKey` (ML-DSA or Dilithium) and `SphincsPlus_PrivateKey` (SLH-DSA or SPHINCS+). Code that names the ML-KEM, ML-DSA or SLH-DSA class is reported ✅; code that names the older class is reported 🔍 so the mode can be checked.
+- In Botan, `ML_KEM_PrivateKey` is another name for `Kyber_PrivateKey`, and the class holds either ML-KEM or the older pre-standard Kyber, depending on a mode value. The same is true of `Dilithium_PrivateKey` (ML-DSA or Dilithium) and `SphincsPlus_PrivateKey` (SLH-DSA or SPHINCS+). Code that names the ML-KEM, ML-DSA or SLH-DSA class is reported as resistant; code that names the older class is reported as needs review, so the mode can be checked.
 - FrodoKEM and Classic McEliece are believed to resist quantum computers but are not NIST standards.
 
 ## How C++ is read
@@ -25,7 +25,7 @@ Two Botan details are reported as 🔍 rather than ✅:
 - **One use per line.** A type named twice on one line (`std::unique_ptr<CryptoPP::SHA256> p(new CryptoPP::SHA256)`) is reported once.
 - **Calls inside a declaration.** C++ reads `Wrapper w(EVP_PKEY_CTX_new_id(EVP_PKEY_DH, NULL));` as declaring a function (the "most vexing parse"). Inside a function body, the tool treats it as the call it almost always is.
 - **Export macros.** A macro between `class` and the class name (`class BOTAN_PUBLIC_API(3, 6) RSA_PublicKey`) is blanked before parsing, so the rest of the class header, including its base classes, can be read.
-- **The preprocessor** is handled as for C: both sides of every `#if` are read, code inside `#define` macros is read separately and reported on the line where the macro is defined, and a known name inside code the parser cannot read is reported as ⚠️ `unresolved`.
+- **The preprocessor** is handled as for C: both sides of every `#if` are read, code inside `#define` macros is read separately and reported on the line where the macro is defined, and a known name inside code the parser cannot read is reported as `unresolved`.
 
 ## `.h` files
 
@@ -33,7 +33,7 @@ A `.h` file can hold C or C++, so it is read by the C++ adapter and checked agai
 
 ## Functions that choose the algorithm
 
-A function of the project's own that passes one of its parameters on as the algorithm is followed to where it is called, as in C. `Class::f` is matched only when called as `Class::f(...)` or from its own file, and a method called on an object (`h.pick("sha1")`) is not followed, because the object's type is not known. See [Functions that choose the algorithm from a parameter](../wrappers.md).
+A function of the project's own that passes one of its parameters on as the algorithm is followed to where it is called, as in C. `Class::f` is matched only when called as `Class::f(...)` or from its own file, and a method called on an object (`h.pick("sha1")`) is not followed, because the object's type is not known. See [Functions that choose the algorithm from a parameter](../../docs/wrappers.md).
 
 ## Limits specific to C++
 

@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import type { ModuleRules } from './types.ts';
+import { fileURLToPath } from 'node:url';
 
 function validateRules(value: unknown, file: string): asserts value is Omit<ModuleRules, 'language'> {
   if (!value || typeof value !== 'object') throw new Error(`${file}: rule file must contain an object.`);
@@ -40,7 +41,7 @@ export function loadRules(rulesDir = new URL('../../rules/', import.meta.url)): 
       .filter((name) => name.endsWith('.yaml'))
       .sort()
       .map((name) => {
-        const value = parse(readFileSync(join(new URL(`${folder.name}/`, root).pathname, name), 'utf8'));
+        const value = parse(readFileSync(join(fileURLToPath(new URL(`${folder.name}/`, root)), name), 'utf8'));
         validateRules(value, `${folder.name}/${name}`);
         return { ...value, language: folder.name };
       }));

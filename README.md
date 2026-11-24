@@ -16,7 +16,7 @@
 
 - **The problem:** RSA and elliptic-curve cryptography are the most widely used methods for digital signatures and for setting up encrypted connections. A large enough quantum computer could break both. None exists yet.
 - **Why act now:** an attacker can record encrypted data today and decrypt it once such a computer exists. NIST calls this "harvest now, decrypt later".
-- **What this tool does:** it finds the uses of cryptography it can recognise in your code (see [Languages](#languages)) and labels each one ❌ breakable by a quantum computer, ✅ believed safe, 🔍 needs a human decision, or ⚠️ could not be determined.
+- **What this tool does:** it finds the uses of cryptography it can recognise in your code (see [Languages](#languages)) and labels each one vulnerable (a quantum computer could break it), resistant (believed safe), needs review (a human decision), or unresolved (could not be determined).
 - **What it does not do:** it never says your code is "quantum safe". It reports only what it can read in the code, and says so when it cannot tell.
 - **Safe to run:** it does not change your code, run it, or send anything over the internet. The only file it writes is the cache, and only if you ask for one with `--cache`.
 
@@ -45,37 +45,37 @@ Example result:
 
 ```
 Cryptography found:
-------------------------------------------------------------------------
-✅ index.ts:3                           SHA-256            observed-resistant
-❌ keys.js:3                            RSA                vulnerable
-     ℹ️  A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type.
-------------------------------------------------------------------------
-2 finding(s): 1 vulnerable, 0 needs-review, 0 unresolved, 1 observed-resistant.
+----------------------------------------------------------------------------
+RESISTANT   index.ts:3                               SHA-256
+VULNERABLE  keys.js:3                                RSA
+            A quantum computer could work out the private key from the public key (using Shor's algorithm). Plan to replace this key type.
+----------------------------------------------------------------------------
+2 finding(s): 1 vulnerable, 0 needs review, 0 unresolved, 1 resistant.
 
-🚨 Quantum risk found: the ❌ items use cryptography a quantum computer could break. Plan their migration.
+Quantum risk found: the VULNERABLE items use cryptography a quantum computer could break. Plan their migration.
 ```
 
 | Option | What it does |
 |---|---|
 | `--json` | Prints the results as JSON for other programs. The format is described by [`schema/report-v1.schema.json`](schema/report-v1.schema.json); its `schemaVersion` changes only when a change could break a program that reads it. |
 | `--quiet` | Hides the cat banner. |
-| `--sarif <file>` | Also writes the ❌, 🔍 and ⚠️ findings to `<file>` in SARIF 2.1.0, the format GitHub code scanning reads, so they appear as alerts on pull requests. ✅ findings are left out, since they need no action. |
+| `--sarif <file>` | Also writes the vulnerable, needs-review and unresolved findings to `<file>` in SARIF 2.1.0, the format GitHub code scanning reads, so they appear as alerts on pull requests. Resistant findings are left out, since they need no action. |
 | `--cbom <file>` | Also writes the full inventory to `<file>` as a cryptography bill of materials (CBOM) in CycloneDX 1.7, the format standardised as ECMA-424: one entry per algorithm, with every file and line where it is used, its CycloneDX family and type, and its NIST quantum security category where a NIST standard states one (0 for methods a quantum computer could break). |
 | `--write-baseline <file>` | Also writes every finding to `<file>`, to accept the current findings for now. |
 | `--baseline <file>` | Leaves out the findings listed in `<file>`, so the exit status is 1 only for new ones. A finding is recognised by its rule, file and the text of its line, so it still matches after code above it moves. |
 | `--cache <file>` | Saves each file's results in `<file>` and reuses them on the next run while the file is unchanged. The saved results are discarded whenever the scanner or its rules change. Anyone who can change the cache file can change the results, so keep it outside the folder you scan (the tool refuses a cache inside it), or set the environment variable `PQC_SCAN_CACHE_KEY` to a secret: the cache is then signed, and a cache that was changed or signed with another key is not used. |
-| `--max-file-size <MB>` | Files larger than this (default 20 MB) are not read, and are reported as ⚠️ not scanned. |
+| `--max-file-size <MB>` | Files larger than this (default 20 MB) are not read, and are reported as unresolved (not scanned). |
 
-Exit status: 0 when every finding is ✅ or nothing was found, 1 when any finding is ❌, 🔍 or ⚠️, and 2 when the scan could not run (for example, the path does not exist).
+Exit status: 0 when every finding is resistant or nothing was found, 1 when any finding is vulnerable, needs review or is unresolved, and 2 when the scan could not run (for example, the path does not exist).
 
 ## What the labels mean
 
 | Label | Meaning | What you should do |
 |---|---|---|
-| ❌ `vulnerable` | RSA, DSA, elliptic-curve methods (such as ECDSA, Ed25519, ECDH and X25519) or Diffie-Hellman. Shor's algorithm breaks these. | Plan to replace it with a NIST post-quantum method. |
-| ✅ `observed-resistant` | A method believed to withstand quantum computers, such as SHA-256, 256-bit AES or ML-KEM. | Nothing. This describes that one line, not your whole program. |
-| 🔍 `needs-review` | Known exactly, but acceptable only by judgement. Examples: 128-bit AES, which NIST still accepts but some organisations replace with 256-bit AES for a larger safety margin against quantum attacks; SHA-224, whose 112-bit collision strength is a security level NIST plans to disallow in 2030; and MD5 and SHA-1, which are broken even by ordinary computers. | A person decides. |
-| ⚠️ `unresolved` | The code picks the method in a way the tool cannot read, such as a setting read at run time or a value passed into a function. | Look at that line by hand. |
+| `vulnerable` | RSA, DSA, elliptic-curve methods (such as ECDSA, Ed25519, ECDH and X25519) or Diffie-Hellman. Shor's algorithm breaks these. | Plan to replace it with a NIST post-quantum method. |
+| `observed-resistant` | A method believed to withstand quantum computers, such as SHA-256, 256-bit AES or ML-KEM. | Nothing. This describes that one line, not your whole program. |
+| `needs-review` | Known exactly, but acceptable only by judgement. Examples: 128-bit AES, which NIST still accepts but some organisations replace with 256-bit AES for a larger safety margin against quantum attacks; SHA-224, whose 112-bit collision strength is a security level NIST plans to disallow in 2030; and MD5 and SHA-1, which are broken even by ordinary computers. | A person decides. |
+| `unresolved` | The code picks the method in a way the tool cannot read, such as a setting read at run time or a value passed into a function. | Look at that line by hand. |
 
 ## Languages
 
@@ -111,7 +111,7 @@ Which algorithms count as risky is a judgement call. The decisions are written o
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organised, how to add a library or a language, and how the tests work.
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for how the code is organised, how to add a library or a language, and how the tests work.
 
 ## Licence
 

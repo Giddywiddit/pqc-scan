@@ -25,10 +25,10 @@ C code is full of `#if`, `#ifdef` and `#define`. The tool does not run the prepr
 
 - Both sides of every `#if` are read, because the tool cannot know which one your build uses.
 - The code inside `#define` macros is read separately. A crypto call inside a macro is reported on the line where the macro is defined, even if the macro is never used.
-- Where the parser cannot make sense of part of a file (common in code full of macros), any known crypto function name found there is still reported, as ⚠️ `unresolved`, instead of being dropped.
+- Where the parser cannot make sense of part of a file (common in code full of macros), any known crypto function name found there is still reported, as `unresolved`, instead of being dropped.
 ## Functions that choose the algorithm
 
-A function of the project's own that passes one of its parameters on as the algorithm (`pick(name)` calling `EVP_get_digestbyname(name)`) is followed to where it is called, and a call that passes a written value (`pick("sha1")`) is reported with that algorithm. See [Functions that choose the algorithm from a parameter](../wrappers.md).
+A function of the project's own that passes one of its parameters on as the algorithm (`pick(name)` calling `EVP_get_digestbyname(name)`) is followed to where it is called, and a call that passes a written value (`pick("sha1")`) is reported with that algorithm. See [Functions that choose the algorithm from a parameter](../../docs/wrappers.md).
 
 ## Limits specific to C
 

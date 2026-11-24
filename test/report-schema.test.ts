@@ -5,11 +5,12 @@ import { Ajv } from 'ajv';
 import { describe, expect, it } from 'vitest';
 import { CATEGORIES, STATUSES } from '../src/core/types.ts';
 import { SCHEMA_VERSION } from '../src/output/json.ts';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const schema = JSON.parse(readFileSync(join(root, 'schema/report-v1.schema.json'), 'utf8'));
 const validate = new Ajv({ allErrors: true }).compile(schema);
-const report = (fixture: string) => JSON.parse(spawnSync('npx', ['tsx', 'src/cli.ts', join(root, 'test/fixtures', fixture), '--json'], { cwd: root, encoding: 'utf8' }).stdout);
+const report = (fixture: string) => JSON.parse(spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', join(root, 'test/fixtures', fixture), '--json'], { cwd: root, encoding: 'utf8' }).stdout);
 
 describe('--json report matches the published schema', () => {
   it.each(['mixed', 'wrapper', 'empty', 'resolve'])('real output for the %s fixture is valid', (fixture) => {

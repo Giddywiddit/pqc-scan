@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
 import { loadLanguages, rulesByAdapter } from '../src/core/scan.ts';
 import { languages } from '../src/languages/index.ts';
+import { fileURLToPath } from 'node:url';
 
 // Each fixture marks expected findings inline: `// expect: <algorithm|-> <status>[, <algorithm|-> <status>]`.
 // Lines without a marker must produce no finding, so both missing and unexpected findings fail.
@@ -14,7 +15,7 @@ beforeAll(() => loadLanguages());
 const marker = /(?:\/\/ expect: (.+)$|\/\* expect: (.+?) \*\/)/;
 
 // Every fixture folder with at least one marked file is a corpus, so a new language's folder is picked up on its own.
-const root = new URL('./fixtures/', import.meta.url).pathname;
+const root = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const corpora = readdirSync(root).filter((directory) => readdirSync(join(root, directory), { withFileTypes: true })
   .some((entry) => entry.isFile() && readFileSync(join(root, directory, entry.name), 'utf8').includes('expect: ')));
 

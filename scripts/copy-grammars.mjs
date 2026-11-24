@@ -3,9 +3,10 @@
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const out = new URL('../grammars/', import.meta.url).pathname;
+const out = fileURLToPath(new URL('../grammars/', import.meta.url));
 mkdirSync(out, { recursive: true });
 for (const grammar of ['c', 'cpp', 'rust', 'go']) {
   const folder = dirname(require.resolve(`tree-sitter-${grammar}/package.json`));

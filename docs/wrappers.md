@@ -6,15 +6,15 @@ A project often wraps a crypto call in a function of its own, and lets the calle
 
 ```c
 const EVP_MD *pick(const char *name) {
-    return EVP_get_digestbyname(name);   // ⚠️ the algorithm is whatever the caller passes
+    return EVP_get_digestbyname(name);   // unresolved: the algorithm is whatever the caller passes
 }
 ```
 
-Read on its own, that line cannot say which algorithm is used, so it is reported as ⚠️ `unresolved`. The scanner then follows the function to where it is called, anywhere in the folder scanned:
+Read on its own, that line cannot say which algorithm is used, so it is reported as `unresolved`. The scanner then follows the function to where it is called, anywhere in the folder scanned:
 
-- **A call that passes a value written in the code** is reported where it is, with the algorithm: `pick("sha1")` is reported as SHA-1, 🔍 `needs-review`, on the line of the call.
+- **A call that passes a value written in the code** is reported where it is, with the algorithm: `pick("sha1")` is reported as SHA-1, `needs-review`, on the line of the call.
 - **A call that passes its own parameter on** (`void f(const char *alg) { pick(alg); }`) makes that function a wrapper too, and its callers are followed in the same way, up to five functions deep.
-- **Calls that pass a value that cannot be read**, such as a setting read at run time, are listed on the wrapper's own ⚠️ finding instead of being reported one by one: "The algorithm is parameter 1 ("name") of pick(), so its callers choose it. 2 call(s) pass a value that cannot be read here, such as main.c:4, api.c:31; check those by hand." When no call is found at all, the finding says so.
+- **Calls that pass a value that cannot be read**, such as a setting read at run time, are listed on the wrapper's own unresolved finding instead of being reported one by one: "The algorithm is parameter 1 ("name") of pick(), so its callers choose it. 2 call(s) pass a value that cannot be read here, such as main.c:4, api.c:31; check those by hand." When no call is found at all, the finding says so.
 
 ## Which calls count
 
@@ -33,14 +33,14 @@ On the 34 projects the scanner is tested on, following wrappers added findings o
 
 | Code | Findings added | Wrappers found |
 |---|---|---|
-| wolfSSL | 496 (322 ✅, 95 🔍, 79 ⚠️) | 134 |
-| GnuTLS | 66 (21 ✅, 25 🔍, 20 ❌) | 57 |
-| Mbed TLS | 30 (21 ✅, 8 🔍, 1 ❌) | 34 |
-| TF-PSA-Crypto | 24 (14 ✅, 8 🔍, 2 ❌) | 26 |
-| Botan | 15 (6 ✅, 3 🔍, 6 ⚠️) | 29 |
-| RNP | 4 ❌ | 4 |
-| cpp-httplib | 3 (2 ✅, 1 🔍) | 1 |
+| wolfSSL | 496 (322 resistant, 95 needs review, 79 unresolved) | 134 |
+| GnuTLS | 66 (21 resistant, 25 needs review, 20 vulnerable) | 57 |
+| Mbed TLS | 30 (21 resistant, 8 needs review, 1 vulnerable) | 34 |
+| TF-PSA-Crypto | 24 (14 resistant, 8 needs review, 2 vulnerable) | 26 |
+| Botan | 15 (6 resistant, 3 needs review, 6 unresolved) | 29 |
+| RNP | 4 vulnerable | 4 |
+| cpp-httplib | 3 (2 resistant, 1 needs review) | 1 |
 
-The ⚠️ findings added are calls that pass a value the rule does not know, such as `0` for "no key yet" in wolfSSL's tests, or names Botan's tests pass on purpose to check they are refused (`"Blake2b(9)"`).
+The unresolved findings added are calls that pass a value the rule does not know, such as `0` for "no key yet" in wolfSSL's tests, or names Botan's tests pass on purpose to check they are refused (`"Blake2b(9)"`).
 
 Following wrappers reads again the files that call one, so it adds time where there are many: wolfSSL took 7.8 seconds instead of 5.0, GnuTLS 3.1 instead of 2.2, and Mbed TLS 2.4 instead of 1.8. HashiCorp Vault, which has none, took 3.9 seconds instead of 3.6.

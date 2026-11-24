@@ -3,9 +3,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { scanInParallel } from '../src/core/parallel.ts';
 import { loadRules } from '../src/core/rules.ts';
 import { loadLanguages, scan } from '../src/core/scan.ts';
+import { fileURLToPath } from 'node:url';
 
 const rules = loadRules();
-const fixture = (name: string) => join(new URL('.', import.meta.url).pathname, 'fixtures', name);
+const fixture = (name: string) => join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures', name);
 beforeAll(() => loadLanguages());
 
 // Threads change only how fast a scan runs: the findings and their order must be exactly those of a one-thread scan.

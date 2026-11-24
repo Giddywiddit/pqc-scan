@@ -34,7 +34,7 @@ Node.js 24 for the job.
 | `upload-sarif` | `true` | Upload the SARIF file to code scanning. Needs `security-events: write`. |
 | `cbom` | empty | Where to write the CycloneDX 1.7 cryptography bill of materials. |
 | `baseline` | empty | A file written with `pqc-scan --write-baseline`: the findings it lists do not fail the step. |
-| `fail-on-findings` | `true` | Fail the step when there is a new ❌, 🔍 or ⚠️ finding. |
+| `fail-on-findings` | `true` | Fail the step when there is a new vulnerable, needs-review or unresolved finding. |
 | `args` | empty | More options, such as `--max-file-size 50`. |
 | `package` | the action's version | The npm package to run, such as `pqc-scan@0.1.0`. |
 

@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Finding } from './types.ts';
 
@@ -14,6 +14,26 @@ const projectRoot = fileURLToPath(new URL('../../', import.meta.url));
 const codeFolder = fileURLToPath(new URL('../', import.meta.url)).slice(projectRoot.length).replace(/[\\/]$/, '');
 
 const require = createRequire(import.meta.url);
+
+/**
+ * The installed version of a package, found from the package's own entry point, since some packages (web-tree-sitter)
+ * do not let their package.json be loaded by name. Undefined when the package is not installed.
+ */
+export function installedVersion(name: string): string | undefined {
+  let folder: string;
+  try {
+    folder = dirname(require.resolve(name));
+  } catch {
+    return undefined;
+  }
+  for (; folder !== dirname(folder); folder = dirname(folder)) {
+    const file = join(folder, 'package.json');
+    if (!existsSync(file)) continue;
+    const manifest = JSON.parse(readFileSync(file, 'utf8')) as { name?: string; version?: string };
+    if (manifest.name === name) return manifest.version;
+  }
+  return undefined;
+}
 
 /**
  * A fingerprint of everything that decides what a scan finds: the scanner's own code, its rules, the grammars and the
@@ -32,12 +52,9 @@ function toolVersion(): string {
   add('rules');
   if (existsSync(join(projectRoot, 'grammars'))) add('grammars');
   hash.update(readFileSync(join(projectRoot, 'package.json')));
+  // The grammar packages are not installed with the published package, which carries their files in grammars/.
   for (const name of ['typescript', 'web-tree-sitter', 'yaml', 'tree-sitter-c', 'tree-sitter-cpp', 'tree-sitter-rust', 'tree-sitter-go']) {
-    try {
-      hash.update(`${name}@${(JSON.parse(readFileSync(require.resolve(`${name}/package.json`), 'utf8')) as { version: string }).version}`);
-    } catch {
-      // The grammar packages are not installed with the published package, which carries their files in grammars/.
-    }
+    hash.update(`${name}@${installedVersion(name) ?? 'not installed'}\n`);
   }
   return hash.digest('hex');
 }

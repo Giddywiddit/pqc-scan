@@ -2,10 +2,11 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { languages } from '../src/languages/index.ts';
+import { fileURLToPath } from 'node:url';
 
 // The docs are split per language so the main README stays short. These tests keep each language page in step with
 // the rule files beside it, and the main README's language table in step with the registered languages.
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const readme = readFileSync(join(root, 'README.md'), 'utf8');
 
 describe.each(languages.map((adapter) => adapter.id))('docs for %s', (id) => {

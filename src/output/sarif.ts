@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import type { Finding, Status } from '../core/types.ts';
 
-// SARIF 2.1.0 (OASIS), the format GitHub code scanning reads. Only findings that need action are included: a ✅
-// finding is part of the inventory (see --json and --cbom), not an alert.
+// SARIF 2.1.0 (OASIS), the format GitHub code scanning reads. Only findings that need action are included: a
+// resistant finding is part of the inventory (see --json and --cbom), not an alert.
 
 const version = (JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string }).version;
 

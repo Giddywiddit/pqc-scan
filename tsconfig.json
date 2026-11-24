@@ -3,11 +3,11 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2022",
-    "allowImportingTsExtensions": true,
     "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["test/fixtures"]
+  "include": ["src/**/*.ts"]
 }

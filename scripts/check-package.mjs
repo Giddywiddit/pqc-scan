@@ -4,8 +4,9 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const work = mkdtempSync(join(tmpdir(), 'pqc-package-'));
 const run = (command, args, cwd) => execFileSync(command, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
 const tarball = run('npm', ['pack', '--silent', '--pack-destination', work], root).trim().split('\n').pop();

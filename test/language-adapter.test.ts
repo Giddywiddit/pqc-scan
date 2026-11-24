@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { UNRESOLVED_ALGORITHM_NOTE, finding } from '../src/core/finding.ts';
 import type { LanguageAdapter } from '../src/core/language.ts';
@@ -83,7 +83,7 @@ describe('adding a language needs only an adapter and a rules folder', () => {
 
 describe('boundaries between languages', () => {
   it('lets other languages use the C support only through src/languages/c/api.ts', () => {
-    const root = join(dirname(new URL(import.meta.url).pathname), '../src/languages');
+    const root = join(dirname(fileURLToPath(new URL(import.meta.url))), '../src/languages');
     const offenders = languages.filter((adapter) => adapter.id !== 'c').flatMap((adapter) => {
       const source = readFileSync(join(root, adapter.id, 'adapter.ts'), 'utf8');
       return /from '\.\.\/c\/(?!api\.ts')/.test(source) ? [adapter.id] : [];

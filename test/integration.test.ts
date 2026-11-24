@@ -2,15 +2,15 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
 import { loadLanguages, scan } from '../src/core/scan.ts';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const fixture = (name: string) => join(root, 'test/fixtures', name);
 beforeAll(() => loadLanguages());
-const cli = (...args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8' });
+const cli = (...args: string[]) => spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', ...args], { cwd: root, encoding: 'utf8' });
 
 describe('filesystem scanning', () => {
   it('scans a multi-file directory and reports paths relative to it', () => {
@@ -41,7 +41,7 @@ describe('filesystem scanning', () => {
       mkdirSync(join(dir, folder), { recursive: true });
       writeFileSync(join(dir, folder, 'a.rs'), code);
     }
-    expect(scan(dir, loadRules()).map((item) => item.file).sort()).toEqual([join('src', 'a.rs'), join('tools', 'target', 'a.rs')]);
+    expect(scan(dir, loadRules()).map((item) => item.file).sort()).toEqual(['src/a.rs', 'tools/target/a.rs']);
   });
 
   it("skips a Go module's vendor folder, but not a folder named vendor elsewhere", () => {
@@ -52,7 +52,7 @@ describe('filesystem scanning', () => {
       mkdirSync(join(dir, folder), { recursive: true });
       writeFileSync(join(dir, folder, 'a.go'), code);
     }
-    expect(scan(dir, loadRules()).map((item) => item.file).sort()).toEqual([join('cmd', 'a.go'), join('tools', 'vendor', 'a.go')]);
+    expect(scan(dir, loadRules()).map((item) => item.file).sort()).toEqual(['cmd/a.go', 'tools/vendor/a.go']);
   });
 
   it('flags importers of a wrapper whose algorithm is decided by its callers, across extensions and re-exports', () => {
@@ -130,7 +130,9 @@ describe('CLI contract', () => {
     const result = cli(fixture('cli-vulnerable'));
     expect(result.status).toBe(1);
     expect(result.stdout).toMatch(/\/\\_\/\\/);
-    expect(result.stdout).toMatch(/❌ index\.ts:2\s+RSA\s+vulnerable/);
+    expect(result.stdout).toMatch(/^VULNERABLE\s+index\.ts:2\s+RSA$/m);
+    // Piped output (as here) has no colour codes, and no emoji anywhere.
+    expect(result.stdout).not.toMatch(/\x1b\[|\p{Extended_Pictographic}/u);
     expect(result.stdout).toMatch(/1 finding\(s\): 1 vulnerable/);
     expect(result.stdout).toMatch(/Quantum risk found/);
   });
@@ -145,7 +147,7 @@ describe('CLI contract', () => {
     const result = cli(fixture('cli-observed'), '--quiet');
     expect(result.status).toBe(0);
     expect(result.stdout).not.toMatch(/pqc-scan •/);
-    expect(result.stdout).toMatch(/observed-resistant/);
+    expect(result.stdout).toMatch(/^RESISTANT\s/m);
   });
 
   it('says plainly that an empty scan is not a security conclusion', () => {

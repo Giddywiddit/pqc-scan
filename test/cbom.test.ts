@@ -7,8 +7,9 @@ import { describe, expect, it } from 'vitest';
 import { loadRules } from '../src/core/rules.ts';
 import type { Finding } from '../src/core/types.ts';
 import { registryEntry, tablePrimitive, toCbom } from '../src/output/cbom.ts';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const schema = (name: string) => JSON.parse(readFileSync(join(root, 'test/schemas', name), 'utf8'));
 // URI, e-mail and date formats are not checked.
 const ajv = new Ajv({ strict: false, validateFormats: false });
@@ -47,7 +48,7 @@ describe('--cbom', () => {
     const dir = mkdtempSync(join(tmpdir(), 'pqc-cbom-'));
     writeFileSync(join(dir, 'keys.c'), 'void f(void) {\n  RSA_generate_key_ex(k, 2048, e, 0);\n  SHA256(d, n, out);\n  RSA_generate_key_ex(k, 4096, e, 0);\n  EVP_PKEY_CTX_new_id(id, NULL);\n}\n');
     const file = join(mkdtempSync(join(tmpdir(), 'pqc-out-')), 'cbom.json');
-    spawnSync('npx', ['tsx', 'src/cli.ts', '--quiet', dir, '--cbom', file], { cwd: root, encoding: 'utf8' });
+    spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', '--quiet', dir, '--cbom', file], { cwd: root, encoding: 'utf8' });
     const bom = JSON.parse(readFileSync(file, 'utf8'));
     expect(validate(bom), JSON.stringify(validate.errors?.slice(0, 3))).toBe(true);
     const summary = bom.components.map((component: { name: string; evidence: { occurrences: { line: number }[] }; properties: { value: string }[]; cryptoProperties: { algorithmProperties: { primitive: string; nistQuantumSecurityLevel?: number } } }) =>

@@ -5,7 +5,8 @@ import { Language, Parser } from 'web-tree-sitter';
 
 // Each grammar comes from its official `tree-sitter-<language>` package, which ships a ready-built `.wasm` file. Only
 // that file is used: the packages' native Node bindings (and their install scripts) are not needed. Versions are pinned
-// exactly in package.json so a grammar update cannot silently change what the scanner finds. The published package
+// exactly in package.json, as are TypeScript (which reads JavaScript and TypeScript) and yaml (which reads the rules),
+// so an update to any of them cannot silently change what the scanner finds. The published package
 // carries the `.wasm` files themselves in `grammars/` (copied by scripts/copy-grammars.mjs), so users do not install the
 // grammar packages at all; when working on the scanner, they are read from node_modules.
 const require = createRequire(import.meta.url);
