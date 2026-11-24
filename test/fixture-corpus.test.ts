@@ -29,7 +29,7 @@ for (const directory of corpora) {
         const text = readFileSync(join(base, name), 'utf8');
         const expected = new Map<number, string[]>();
         text.split('\n').forEach((line, index) => {
-          const match = marker.exec(line);
+          const match = marker.exec(line.endsWith('\r') ? line.slice(0, -1) : line);
           if (match) expected.set(index + 1, (match[1] ?? match[2] ?? match[3]).split(',').map((item) => item.trim()));
         });
         const actual = new Map<number, string[]>();
