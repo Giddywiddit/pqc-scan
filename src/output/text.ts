@@ -16,9 +16,9 @@ const dim = (text: string) => (useColour() ? `\x1b[2m${text}\x1b[0m` : text);
 export const MASCOT_BANNER = [
   ' /\\_/\\',
   '( 0.1 )    [ pqc-scan • Post-Quantum Cryptography Scanner ]',
-  ' > ^ <     Finds the cryptography in your JavaScript, TypeScript, C, C++, Rust and Go',
+  ' > ^ <     Scans your JavaScript, TypeScript, C, C++, Rust and Go',
   '           ---------------------------------------------------------',
-  '           Looks for what quantum computers will break (NIST FIPS 203/204/205)\n',
+  '           Flags the cryptography a quantum computer could break\n',
 ].join('\n');
 
 export function printTable(findings: Finding[], known = 0): void {
