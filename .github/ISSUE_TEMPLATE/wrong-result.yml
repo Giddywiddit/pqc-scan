@@ -1,0 +1,30 @@
+name: Wrong result
+description: pqc-scan reported something wrong, or missed something.
+body:
+  - type: textarea
+    id: code
+    attributes:
+      label: The code
+      description: The smallest piece of code that shows the problem.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: printed
+    attributes:
+      label: What pqc-scan printed
+      description: The output, or "nothing".
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version you installed, shown by `npm ls pqc-scan`.

@@ -4,10 +4,10 @@ Licensed under the Apache License, Version 2.0 (see LICENSE).
 
 This product includes the following third-party files, each under its own licence:
 
-- tree-sitter grammars for C, C++, Rust and Go (the .wasm files in grammars/, copied from the npm packages
-  tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, tree-sitter-rust 0.24.0 and tree-sitter-go 0.25.0).
-  MIT License; copyright Max Brunsfeld (C, C++, Go) and Maxim Sokolov (Rust). The full licence texts are in
-  grammars/LICENSE-tree-sitter-*.
+- tree-sitter grammars for C, C++, Rust, Go and Python (the .wasm files in grammars/, copied from the npm packages
+  tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, tree-sitter-rust 0.24.0, tree-sitter-go 0.25.0 and
+  tree-sitter-python 0.25.0). MIT License; copyright Max Brunsfeld (C, C++, Go, Python) and Maxim Sokolov (Rust).
+  The full licence texts are in grammars/LICENSE-tree-sitter-*.
 
 - schema/cyclonedx/cryptography-defs.json, the CycloneDX cryptography registry from the CycloneDX specification
   1.7.2 (https://github.com/CycloneDX/specification), unchanged. Apache License, Version 2.0.

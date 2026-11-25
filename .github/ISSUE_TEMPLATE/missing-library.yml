@@ -1,0 +1,16 @@
+name: Library not detected
+description: A cryptography library or language pqc-scan does not cover.
+body:
+  - type: input
+    id: library
+    attributes:
+      label: Library and language
+      description: For example, Bouncy Castle (Java).
+    validations:
+      required: true
+  - type: textarea
+    id: usage
+    attributes:
+      label: How your code uses it
+      description: A few lines showing the calls you want found.
+      render: text
