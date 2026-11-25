@@ -27,7 +27,7 @@ export type Reply = { index: number; findings: Finding[] } | { index: number; si
  * code to repay starting them. Results are put back in the same order, so the output is identical to `scan`.
  */
 export async function scanInParallel(target: string, rules: ModuleRules[], options: ParallelOptions = {}): Promise<Finding[]> {
-  const { root, files } = planScan(target, languages);
+  const { root, files, unreadable } = planScan(target, languages);
   const findings: Finding[][] = new Array(files.length);
   const { cache } = options;
   const maxBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
@@ -47,7 +47,7 @@ export async function scanInParallel(target: string, rules: ModuleRules[], optio
     const rulesFor = rulesByAdapter(rules, languages);
     for (const index of pending) findings[index] = scanFile(files[index], rulesFor, maxBytes);
     if (cache) for (const index of pending) cache.set(keys[index], findings[index]);
-    return finishScan(root, files, findings, rules);
+    return finishScan(root, files, findings, rules, undefined, unreadable);
   }
   const pool = new Pool(threads, rules);
   try {
@@ -58,7 +58,7 @@ export async function scanInParallel(target: string, rules: ModuleRules[], optio
     const sites = new Map<string, CallSite[]>();
     await pool.run(wrapperCallerFiles(files, findings, rules), sizes, (index) => ({ kind: 'calls', index, path: files[index].path, name: files[index].name, language: files[index].adapter.id, maxBytes }),
       (reply) => { if ('sites' in reply) sites.set(files[reply.index].path, reply.sites); });
-    return finishScan(root, files, findings, rules, sites);
+    return finishScan(root, files, findings, rules, sites, unreadable);
   } finally {
     await pool.close();
   }

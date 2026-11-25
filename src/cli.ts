@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { loadRules } from './core/rules.ts';
@@ -31,6 +31,28 @@ if (!target) {
 for (const [option, example] of [['cache', '~/.cache/pqc-scan.json'], ['sarif', 'pqc-scan.sarif'], ['cbom', 'cbom.json'], ['baseline', 'pqc-scan-baseline.json'], ['write-baseline', 'pqc-scan-baseline.json']] as const) {
   if (values[option] !== undefined && typeof values[option] !== 'string') {
     console.error(`pqc-scan: --${option} needs a file name, for example --${option} ${example}`);
+    process.exit(2);
+  }
+}
+
+// An output option may only replace a file that an earlier pqc-scan run wrote (a baseline, SARIF, CBOM or cache), so a
+// mistyped path such as --sarif src/index.ts cannot overwrite someone's source code.
+function isEarlierOutput(file: string): boolean {
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    return parsed.baselineVersion === 1 || parsed.runs?.[0]?.tool?.driver?.name === 'pqc-scan' || parsed.metadata?.tools?.components?.[0]?.name === 'pqc-scan' || (typeof parsed.body === 'string' && parsed.body.includes('"files"'));
+  } catch {
+    return false;
+  }
+}
+for (const option of ['cache', 'sarif', 'cbom', 'write-baseline'] as const) {
+  const file = values[option];
+  if (typeof file === 'string' && !existsSync(dirname(resolve(file)))) {
+    console.error(`pqc-scan: --${option} ${file}: the folder ${dirname(resolve(file))} does not exist. Create it first.`);
+    process.exit(2);
+  }
+  if (typeof file === 'string' && existsSync(resolve(file)) && !isEarlierOutput(resolve(file))) {
+    console.error(`pqc-scan: --${option} ${file} would overwrite a file that pqc-scan did not write. Choose a new file name, or delete that file first.`);
     process.exit(2);
   }
 }

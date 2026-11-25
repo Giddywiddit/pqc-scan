@@ -19,13 +19,15 @@ export async function loadLanguages(adapters: readonly LanguageAdapter[] = langu
 }
 
 /** Every source file under `target` that one of `adapters` reads, in a fixed order. */
-export function planScan(target: string, adapters: readonly LanguageAdapter[] = languages): { root: string | undefined; files: PlannedFile[] } {
+export function planScan(target: string, adapters: readonly LanguageAdapter[] = languages): { root: string | undefined; files: PlannedFile[]; unreadable: Finding[] } {
   const root = statSync(target).isDirectory() ? target : undefined;
   const byExtension = new Map(adapters.flatMap((adapter) => adapter.extensions.map((extension) => [extension, adapter] as const)));
-  const files = sourceFiles(target, new Set(byExtension.keys()))
-    // Reported file names use `/` on every system, so reports and baselines are the same on Windows.
-    .map((path) => ({ path, name: (root ? relative(root, path) : basename(path)).split(sep).join('/'), adapter: byExtension.get(extname(path))! }));
-  return { root, files };
+  const skipped: string[] = [];
+  // Reported file names use `/` on every system, so reports and baselines are the same on Windows.
+  const nameOf = (path: string): string => (root ? relative(root, path) : basename(path)).split(sep).join('/');
+  const files = sourceFiles(target, new Set(byExtension.keys()), skipped)
+    .map((path) => ({ path, name: nameOf(path), adapter: byExtension.get(extname(path))! }));
+  return { root, files, unreadable: skipped.map((path) => unreadableFinding(nameOf(path) || '.')) };
 }
 
 /** One rules array per language for the whole scan, so adapters can build their lookup tables once and reuse them. */
@@ -46,6 +48,11 @@ export function tooLargeFinding(name: string, bytes: number, maxBytes: number): 
     `Not scanned: the file is ${mb(bytes)}, over the ${mb(maxBytes)} limit. Check it by hand, or scan it with a higher --max-file-size.`);
 }
 
+/** The finding for a file or folder that could not be read: reported, not skipped, so it cannot hide anything. */
+export function unreadableFinding(name: string): Finding {
+  return finding(name, 1, 'path-unreadable', 'unknown', null, 'unresolved', 'Not scanned: pqc-scan could not read this file or folder (no permission). Check it by hand, or scan it with access.');
+}
+
 /** The findings in one file. */
 export function scanFile(file: PlannedFile, rulesFor: Map<LanguageAdapter, ModuleRules[]>, maxBytes = DEFAULT_MAX_FILE_BYTES): Finding[] {
   const bytes = statSync(file.path).size;
@@ -54,12 +61,12 @@ export function scanFile(file: PlannedFile, rulesFor: Map<LanguageAdapter, Modul
 }
 
 /** Adds the cross-file findings to the per-file findings (in plan order) and returns them all. */
-export function finishScan(root: string | undefined, files: PlannedFile[], findings: Finding[][], rules: ModuleRules[], prefetched?: ReadonlyMap<string, CallSite[]>): Finding[] {
+export function finishScan(root: string | undefined, files: PlannedFile[], findings: Finding[][], rules: ModuleRules[], prefetched?: ReadonlyMap<string, CallSite[]>, unreadable: Finding[] = []): Finding[] {
   const scanned: ScannedFile[] = files.map((file, index) => ({ ...file, findings: findings[index], text: '' }));
   if (root) addWrapperFindings(scanned);
   addCallsToWrappers(scanned, rules, prefetched);
   // The wrapper marks are only for the step above; they are not part of a finding as reported.
-  return scanned.flatMap((item) => item.findings.map(({ wrapper: _wrapper, ...finding }) => finding));
+  return [...scanned.flatMap((item) => item.findings.map(({ wrapper: _wrapper, ...finding }) => finding)), ...unreadable];
 }
 
 /**
@@ -145,9 +152,9 @@ function addCallsToWrappers(files: ScannedFile[], rules: ModuleRules[], prefetch
 
 /** Scan a file or folder with every registered language, giving each adapter only the rules for its own language. */
 export function scan(target: string, rules: ModuleRules[], adapters: readonly LanguageAdapter[] = languages): Finding[] {
-  const { root, files } = planScan(target, adapters);
+  const { root, files, unreadable } = planScan(target, adapters);
   const rulesFor = rulesByAdapter(rules, adapters);
-  return finishScan(root, files, files.map((file) => scanFile(file, rulesFor)), rules);
+  return finishScan(root, files, files.map((file) => scanFile(file, rulesFor)), rules, undefined, unreadable);
 }
 
 // A module whose algorithm comes from a parameter (or that lets a crypto reference escape) is a wrapper: its importers

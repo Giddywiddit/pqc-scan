@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -180,5 +180,57 @@ describe('CLI contract', () => {
     expect(result.status).toBe(2);
     expect(result.stderr).toMatch(/pqc-scan: path not found/);
     expect(result.stderr).not.toMatch(/at .*\.ts/);
+  });
+});
+
+describe('output files', () => {
+  it('refuses to overwrite a file pqc-scan did not write, and leaves it untouched', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pqc-overwrite-'));
+    const victim = join(dir, 'index.ts');
+    writeFileSync(victim, 'export const keep = 1;\n');
+    for (const option of ['--sarif', '--cbom', '--write-baseline', '--cache']) {
+      const result = cli(fixture('empty'), '--quiet', option, victim);
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain('would overwrite a file that pqc-scan did not write');
+    }
+    expect(readFileSync(victim, 'utf8')).toBe('export const keep = 1;\n');
+  });
+
+  it('replaces its own earlier output, so a second run works', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pqc-rerun-'));
+    for (const [option, name] of [['--sarif', 'a.sarif'], ['--cbom', 'b.json'], ['--write-baseline', 'c.json'], ['--cache', 'd.json']] as const) {
+      const file = join(dir, name);
+      expect(cli(fixture('cli-vulnerable'), '--quiet', option, file).stderr).not.toContain('would overwrite');
+      expect(cli(fixture('cli-vulnerable'), '--quiet', option, file).stderr).not.toContain('would overwrite');
+    }
+  }, 30_000);
+});
+
+describe('files that cannot be read', () => {
+  const canTest = process.platform !== 'win32' && process.getuid?.() !== 0; // permissions do not apply to root or on Windows
+  it.skipIf(!canTest)('reports an unreadable file and folder as unresolved and still scans the rest', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pqc-unreadable-'));
+    const code = "import { generateKeyPairSync } from 'crypto';\ngenerateKeyPairSync('rsa');\n";
+    mkdirSync(join(dir, 'locked'));
+    writeFileSync(join(dir, 'locked', 'b.ts'), code);
+    writeFileSync(join(dir, 'secret.ts'), code);
+    writeFileSync(join(dir, 'ok.ts'), code);
+    chmodSync(join(dir, 'locked'), 0o000);
+    chmodSync(join(dir, 'secret.ts'), 0o000);
+    try {
+      const result = cli(dir, '--json');
+      const found = JSON.parse(result.stdout).findings.map((item: { file: string; ruleId: string; status: string }) => `${item.file} ${item.status}`).sort();
+      expect(found).toEqual(['locked unresolved', 'ok.ts vulnerable', 'secret.ts unresolved']);
+      expect(result.status).toBe(1);
+    } finally {
+      chmodSync(join(dir, 'locked'), 0o755);
+      chmodSync(join(dir, 'secret.ts'), 0o644);
+    }
+  }, 30_000);
+
+  it('stops before scanning when the folder for an output file does not exist', () => {
+    const result = cli(fixture('empty'), '--quiet', '--sarif', join(tmpdir(), 'pqc-no-such-folder', 'x.sarif'));
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('does not exist');
   });
 });
