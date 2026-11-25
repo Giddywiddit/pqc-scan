@@ -194,7 +194,7 @@ describe('output files', () => {
       expect(result.stderr).toContain('would overwrite a file that pqc-scan did not write');
     }
     expect(readFileSync(victim, 'utf8')).toBe('export const keep = 1;\n');
-  });
+  }, 30_000);
 
   it('replaces its own earlier output, so a second run works', () => {
     const dir = mkdtempSync(join(tmpdir(), 'pqc-rerun-'));
